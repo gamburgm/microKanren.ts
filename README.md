@@ -1,4 +1,4 @@
-# microKanren.js
+# microKanren.ts
 
 A practice implementation to help me understand what's going on.
 
