@@ -1,5 +1,5 @@
 import { Substitution } from '../src/types';
-import { find, assv } from '../src/microKanren';
+import { find, assv, occurs } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -38,4 +38,38 @@ describe('find', () => {
   it('returns the value it deeply maps to', () => {
     expect(find(1, sub4)).toEqual('a');
   });
+});
+
+describe('occurs', () => {
+  it('returns false if t is a non-pair value', () => {
+    expect(occurs(5, 'x', [])).toEqual(false);
+  });
+
+  it('returns true if the var and the term are the same', () => {
+    expect(occurs(5, 5, [])).toEqual(true);
+  });
+
+  it('returns false if the term is a pair that does not map to anything', () => {
+    expect(occurs(5, [0, 'a'], [])).toEqual(false);
+  });
+
+  it('returns true if the latter value of a pair maps to the correct thing', () => {
+    expect(occurs(5, [3, 5], [])).toEqual(true);
+  });
+
+  // why is this the case?
+  it('returns true if the former value of a pair maps to the correct thing but the latter does not', () => {
+    expect(occurs(5, [5, 3], [])).toEqual(true);
+  });
+
+  it('resolves the value of the terms', () => {
+    expect(occurs(5, [1, 2], [[1, 'b'], [2, 5]])).toEqual(true);
+  });
+
+  it('resolves the value of the terms deeply', () => {
+    expect(occurs(3, [1, 'a'], [[1, 0], [0, 3]])).toEqual(true);
+  });
+});
+
+describe('ext_s', () => {
 });

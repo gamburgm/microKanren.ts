@@ -6,10 +6,12 @@ export function isVar(t: Term): t is number { return typeof t === 'number'; } //
 
 export function isPair(t: Term): t is Pair { return Array.isArray(t) && t.length === 2; }
 
+// returns the association including the var t or false
 export function assv(t: Term, sub: Substitution): Maybe<Association> {
   return _.find(sub, (asc: Association) => asc[0] === t) || false;
 }
 
+// searches for the value of term t according to substitution sub
 export function find(t: Term, sub: Substitution): Term {
   const found: Maybe<Association> = isVar(t) && assv(t, sub);
   if (found) {
@@ -19,6 +21,7 @@ export function find(t: Term, sub: Substitution): Term {
   return t;
 }
 
+// determines if v occurs within t according to the substitution s
 export function occurs(v: Var, t: Term, s: Substitution): boolean {
   if (isVar(t)) {
     return v === t;
