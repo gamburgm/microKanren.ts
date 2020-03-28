@@ -1,6 +1,6 @@
 # microKanren.ts
 
-A practice implementation to help me understand what's going on.
+An implementation of microKanren in Typescript. 
 
 ```
 Jason Hemann, Daniel P. Friedman, William E. Byrd, and Matthew Might. 2016. 

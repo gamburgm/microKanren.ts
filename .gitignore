@@ -1,3 +1,4 @@
 node_modules/
 .nvimrc
 build/
+notes.md
