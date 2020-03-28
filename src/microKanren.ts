@@ -32,31 +32,34 @@ export function occurs(v: Var, t: Term, s: Substitution): boolean {
   }
 }
 
+// extend the substitution with v mapping to t
 export function ext_s(v: Var, t: Term, s: Substitution): Maybe<Substitution> {
   if (occurs(v, t, s)) {
     return false;
   } else {
-    return s.concat([v, t]);
+    return s.concat([[v, t]]);
   }
 }
 
+// return a substitution that equates the two terms, or return false
 export function unify(t1: Term, t2: Term, sub: Substitution): Maybe<Substitution> {
   if (t1 === t2) return sub;
   else if (isVar(t1)) return ext_s(t1, t2, sub);
   else if (isVar(t2)) return unify(t2, t1, sub);
   else if (isPair(t1) && isPair(t2)) {
     const unifiedVars: Maybe<Substitution> = unify(find(t1[0], sub), find(t2[0], sub), sub);
-    return unifiedVars && sub && unify(find(t1[1], sub), find(t2[1], sub), sub);
+    return unifiedVars && sub && unify(find(t1[1], unifiedVars), find(t2[1], unifiedVars), unifiedVars);
   } else {
     return false;
   }
 }
 
+/*
 export function equality(t1: Term, t2: Term): Goal {
   return (input: State): Stream => {
     const subst: Substitution = input.sub;
     const newSubst: Substitution = unify(find(t1, subst), find(t2, subst), subst);
   };
 }
-
+*/
 

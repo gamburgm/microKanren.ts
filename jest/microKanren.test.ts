@@ -1,5 +1,5 @@
-import { Substitution } from '../src/types';
-import { find, assv, occurs } from '../src/microKanren';
+import { Substitution, Var } from '../src/types';
+import { find, assv, occurs, ext_s, unify } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -72,4 +72,62 @@ describe('occurs', () => {
 });
 
 describe('ext_s', () => {
+  it('returns false if variable in the term', () => {
+    expect(ext_s(5, 5, [])).toEqual(false);
+  });
+
+  it('returns a new substitution if variable not in term', () => {
+    expect(ext_s(5, [1, 2], [])).toEqual([[5, [1, 2]]]);
+  });
+});
+
+describe('unify', () => {
+  it('returns existing substitution if the terms are identical', () => {
+    expect(unify(5, 5, [[0, 'a']])).toEqual([[0, 'a']]);
+    expect(unify([1, 2], [1, 2], [[0, 'a']])).toEqual([[0, 'a']]);
+    expect(unify('a', 'a', [[0, 'a']])).toEqual([[0, 'a']]);
+  });
+
+  it('extends the substitution if one is only a var', () => {
+    const theVar: Var = 5;
+    expect(unify(theVar, 'a', [])).toEqual([[theVar, 'a']]);
+  });
+
+  it('assigns the latter var to the former term', () => {
+    const theVar: Var = 6;
+    expect(unify('b', theVar, [])).toEqual([[theVar, 'b']]);
+  });
+
+  // possible pair examples:
+  // 1. nested pairs
+  // 2. pairs that just don't match
+  // 3. pairs that match straight up
+  // 4. pairs that need lookups to match
+  it('does not unify a pair that does not match', () => {
+    expect(unify(['a', 'b'], ['c', 'd'], [])).toEqual(false);
+  });
+
+  it('does not unify a pair that cannot be unified', () => {
+    expect(unify([1, 'a'], ['b', 'c'], [])).toEqual(false);
+  });
+
+  it('does unify a pair with exactly correct values', () => {
+    expect(unify(['a', 'b'], ['a', 'b'], [])).toEqual([]);
+  });
+
+  it('does unify a pair with overlapping values', () => {
+    expect(unify([1, 'b'], ['a', 0], [])).toEqual([[1, 'a'], [0, 'b']]);
+  });
+
+  // another interesting example: numbers that match each other
+
+  // unify ['a', 'b', 'c', 4, 5], [1, 2, 'c', 'd', 'e']
+  // underlying array: ['a', 'b', 'c', 'd', 'e']
+  it('does crazy stuff', () => {
+    expect(unify(['a', ['b', ['c', [4, 5]]]], [1, [2, ['c', ['d', 'e']]]], [])).toEqual([[1, 'a'], [2, 'b'], [4, 'd'], [5, 'e']]);
+  });
+
+  it('skips values that it knows are equivalent', () => {
+    expect(unify(['a', ['b', [3, [4, 5]]]], [1, [2, [3, ['d', 'e']]]], [])).toEqual([[1, 'a'], [2, 'b'], [4, 'd'], [5, 'e']]);
+  });
 });
