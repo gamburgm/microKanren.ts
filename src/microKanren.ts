@@ -57,14 +57,18 @@ export function unify(t1: Term, t2: Term, sub: Substitution): Maybe<Substitution
 // return a function that consumes a state and returns a new state with the terms unified
 export function equality(t1: Term, t2: Term): Goal {
   return (input: State): Stream => {
-    const subst: Substitution = input[0];
-    const newSubst: Maybe<Substitution> = unify(find(t1, subst), find(t2, subst), subst);
-    if (newSubst) {
-      [[newSubst, input[1]], null];
+    const s: Substitution = input[0];
+    const newS: Maybe<Substitution> = unify(find(t1, s), find(t2, s), s);
+    if (newS) {
+      return [[newS, input[1]]];
     } else {
       return null;
     }
   };
 }
 
-
+export function call_fresh(v: Var, g: Goal): Goal {
+  return (input: State): Stream => {
+    // TODO
+  };
+}

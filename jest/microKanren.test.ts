@@ -1,5 +1,5 @@
 import { Substitution, Var } from '../src/types';
-import { find, assv, occurs, ext_s, unify } from '../src/microKanren';
+import { find, assv, occurs, ext_s, unify, equality } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -135,4 +135,23 @@ describe('unify', () => {
     expect(unify([1, 'a'], [2, 'a'], [[2, 1]])).toEqual([[2, 1]]);
   });
 });
+
+describe('equality', () => {
+  it('does not declare a solution for a false equivalence', () => {
+    expect(equality(false, 'a')([[], 0])).toEqual(null);
+  });
+
+  it('equates two equivalent symbols', () => {
+    expect(equality('a', 'a')([[], 0])).toEqual([[[], 0]]);
+  });
+
+  it('equates a variable with a symbol', () => {
+    expect(equality('a', 5)([[], 0])).toEqual([[[[5, 'a']], 0]]);
+  });
+
+  it('equates two equivalent pairs', () => {
+    expect(equality(['a', 'b'], ['a', 'b'])([[], 0])).toEqual([[[], 0]]);
+  });
+});
+
 

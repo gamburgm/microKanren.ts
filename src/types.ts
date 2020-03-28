@@ -9,9 +9,10 @@ export type Stream =
   | MatureStream
   | ImmatureStream;
 
+// I have no idea if this type is correct
 export type MatureStream = 
   | null
-  | [State, Stream];
+  | State[];
 
 export type ImmatureStream = () => Stream;
 
