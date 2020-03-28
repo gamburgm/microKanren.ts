@@ -1,9 +1,6 @@
 export type Goal = (input: State) => Stream; 
 
-export interface State {
-  sub: Substitution,
-  num: number
-}
+export type State = [Substitution, number];
 
 export type Substitution = Association[];
 export type Association = [number, Term];
@@ -14,7 +11,7 @@ export type Stream =
 
 export type MatureStream = 
   | null
-  | { state: State, stream: Stream };
+  | [State, Stream];
 
 export type ImmatureStream = () => Stream;
 
@@ -30,3 +27,5 @@ export type Pair = [Term, Term];
 export type Term = Var | Bool | Symbol | Empty | Pair;
 
 export type Maybe<T> = T | false;
+
+// NOTE: these are pretty poorly designed types. Should definitely clean this up.

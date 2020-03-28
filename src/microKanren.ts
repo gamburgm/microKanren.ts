@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair } from './types';
+import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair, Stream } from './types';
 
 export function makeVar(n: number): number { return n; } // is this really necessary?
 export function isVar(t: Term): t is number { return typeof t === 'number'; } // same here
@@ -54,12 +54,17 @@ export function unify(t1: Term, t2: Term, sub: Substitution): Maybe<Substitution
   }
 }
 
-/*
+// return a function that consumes a state and returns a new state with the terms unified
 export function equality(t1: Term, t2: Term): Goal {
   return (input: State): Stream => {
-    const subst: Substitution = input.sub;
-    const newSubst: Substitution = unify(find(t1, subst), find(t2, subst), subst);
+    const subst: Substitution = input[0];
+    const newSubst: Maybe<Substitution> = unify(find(t1, subst), find(t2, subst), subst);
+    if (newSubst) {
+      [[newSubst, input[1]], null];
+    } else {
+      return null;
+    }
   };
 }
-*/
+
 
