@@ -6,7 +6,7 @@ export interface State {
 }
 
 export type Substitution = Association[];
-export type Association = [number, Var | Symbol];
+export type Association = [number, Term];
 
 export type Stream =
   | MatureStream
