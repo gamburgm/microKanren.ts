@@ -130,4 +130,9 @@ describe('unify', () => {
   it('skips values that it knows are equivalent', () => {
     expect(unify(['a', ['b', [3, [4, 5]]]], [1, [2, [3, ['d', 'e']]]], [])).toEqual([[1, 'a'], [2, 'b'], [4, 'd'], [5, 'e']]);
   });
+
+  it('unifies with a lookup', () => {
+    expect(unify([1, 'a'], [2, 'a'], [[2, 1]])).toEqual([[2, 1]]);
+  });
 });
+
