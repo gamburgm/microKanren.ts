@@ -28,3 +28,5 @@ export type Empty = [];
 export type Pair = [Term, Term];
 
 export type Term = Var | Bool | Symbol | Empty | Pair;
+
+export type Maybe<T> = T | false;

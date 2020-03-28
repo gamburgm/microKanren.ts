@@ -21,3 +21,21 @@ describe('assv', () => {
     expect(assv(3, [[0, 'g'], [3, 4], [4, 'a']])).toEqual([3, 4]);
   });
 });
+
+describe('find', () => {
+  it('returns the variable', () => {
+    expect(find(5, sub0)).toEqual(5);
+  });
+
+  it('returns the variable if nothing found', () => {
+    expect(find(5, sub1)).toEqual(5);
+  });
+
+  it('returns the value it finds', () => {
+    expect(find(1, sub2)).toEqual('b');
+  });
+
+  it('returns the value it deeply maps to', () => {
+    expect(find(1, sub4)).toEqual('a');
+  });
+});
