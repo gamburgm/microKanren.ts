@@ -2,10 +2,12 @@ import _ from 'lodash';
 import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair, Stream } from './types';
 import util from 'util';
 
-export function makeVar(n: number): number { return n; } // is this really necessary?
-export function isVar(t: Term): t is number { return typeof t === 'number'; } // same here
+export function makeVar(n: number): number { return n; } 
+export function isVar(t: Term): t is number { return typeof t === 'number'; } 
 
 export function isPair(t: Term): t is Pair { return Array.isArray(t) && t.length === 2; }
+
+export function isSym(t: Term): t is string { return typeof t === 'string'; }
 
 // returns the association including the var t or false
 export function assv(t: Term, sub: Substitution): Maybe<Association> {
@@ -94,7 +96,27 @@ export function conj(goal1: Goal, goal2: Goal): Goal {
   }
 }
 
-
+/* ======== Martelli's Multiequation Procedures ========= */
+export function common_part(t1: Term, t2: Term): Maybe<Term> {
+  if (isVar(t1)) {
+    if (isVar(t2)) return Math.min(t1, t2);
+    else return t1;
+  } else if (isSym(t1)) {
+    if (t1 === t2) return t1;
+    else if (isVar(t2)) return t2;
+    else return false;
+  } else if (isPair(t1)) {
+    if (isVar(t2)) return t2;
+    else if (isSym(t2)) return false;
+    else {
+      const lhs_part: Term = common_part(t1[0], t2[0]);
+      const rhs_part: Term = common_part(t1[1], t2[1]);
+      return lhs_part && rhs_part && [lhs_part, rhs_part];
+    }
+  } else {
+    return false;
+  }
+}
 
 function pretty_print(contents: any): void {
   console.log(util.inspect(contents, false, null, true));

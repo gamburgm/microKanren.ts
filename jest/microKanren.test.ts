@@ -1,5 +1,5 @@
 import { Substitution, Var } from '../src/types';
-import { find, assv, occurs, ext_s, unify, equality, call_fresh, disj, conj } from '../src/microKanren';
+import { find, assv, occurs, ext_s, unify, equality, call_fresh, disj, conj, common_part } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -177,6 +177,72 @@ describe('conj', () => {
         return conj(equality(x, y), equality(x, 'z'));
       });
     })([[], 0])).toEqual([[[[0, 1], [1, 'z']], 2]]);
+  });
+});
+
+describe('Common Part', () => {
+  it('finds the common part of two equal symbols', () => {
+    expect(common_part('a', 'a')).toEqual('a');
+  });
+
+  it('finds the common part of two unequal symbols', () => {
+    expect(common_part('a', 'b')).toEqual(false);
+  });
+
+  it('finds the common part of two variables', () => {
+    expect(common_part(1, 2)).toEqual(1);
+  });
+
+  it('finds the common part of two equal variables', () => {
+    expect(common_part(1, 1)).toEqual(1);
+  });
+
+  it('finds the common part of a variable and a symbol', () => {
+    expect(common_part(1, 'a')).toEqual(1);
+  });
+
+  it('finds the common part of a symbol first and a variable second', () => {
+    expect(common_part('a', 1)).toEqual(1);
+  });
+
+  it('finds the common part of a pair of symbols', () => {
+    expect(common_part(['a', 'b'], ['a', 'b'])).toEqual(['a', 'b']);
+  });
+
+  it('finds the common part of pairs of unequal symbols', () => {
+    expect(common_part(['a', 'a'], ['b', 'b'])).toEqual(false);
+  });
+
+  it('finds the common part of pairs of variables and symbols', () => {
+    expect(common_part([1, 2], ['a', 'b'])).toEqual([1, 2]);
+  });
+
+  it('finds the common part of pairs of mixed variables and symbols', () => {
+    expect(common_part(['a', 2], [1, 'b'])).toEqual([1, 2]);
+  });
+
+  it('finds the common part of overlapping variables in pairs', () => {
+    expect(common_part([1, 2], [2, 1])).toEqual([1, 1]);
+  });
+
+  it('returns false when matching a symbol and a pair', () => {
+    expect(common_part('a', [1, 2])).toEqual(false);
+  });
+
+  it('finds the common part of structures pairs and variables', () => {
+    expect(common_part([1, 'a'], [['a', 'b'], 'a'])).toEqual([1, 'a']);
+  });
+
+  it('handles nested structures', () => {
+    expect(common_part([['a', 1], [2, ['b', 'c']]], [3, [['x', 'y'], 4]])).toEqual([3, [2, 4]]);
+  });
+
+  it('handles nested structures with overlapping variables', () => {
+    expect(common_part([['a', 2], ['b', 3]], [['a', 4], 6])).toEqual([['a', 2], 6]);
+  });
+
+  it('blows up on conflicting symbols in nested structure', () => {
+    expect(common_part([['a', ['b', 'c']], 4], [['a', ['b', 'd']], ['a', ['b', 'c']]])).toEqual(false);
   });
 });
 
