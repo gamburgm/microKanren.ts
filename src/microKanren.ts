@@ -32,6 +32,9 @@ export function occurs(v: Var, t: Term, s: Substitution): boolean {
   }
 }
 
+// 'normal' way to do substitution:
+// wherever you see the variable, replace with the term
+
 // extend the substitution with v mapping to t
 export function ext_s(v: Var, t: Term, s: Substitution): Maybe<Substitution> {
   if (occurs(v, t, s)) {

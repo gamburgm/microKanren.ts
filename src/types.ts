@@ -3,6 +3,7 @@ export type Goal = (input: State) => Stream;
 export type State = [Substitution, number];
 
 export type Substitution = Association[];
+// IMPORTANT NOTE: 0 can't map to something that contains 0
 export type Association = [number, Term];
 
 export type Stream =
