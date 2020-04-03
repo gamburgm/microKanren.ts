@@ -70,8 +70,13 @@ export function equality(t1: Term, t2: Term): Goal {
   };
 }
 
-export function call_fresh(v: Var, g: Goal): Goal {
+// construct a new goal by passing the next variable to the goal constructor
+export function call_fresh(goal_ctor: (new_var: Var) => Goal): Goal {
   return (input: State): Stream => {
-    // TODO
-  };
+    return goal_ctor(input[1])([input[0], input[1] + 1]);
+  }
 }
+
+export function disj(goal1: Goal, goal2: Goal): Goal {
+}
+

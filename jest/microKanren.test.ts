@@ -1,5 +1,5 @@
 import { Substitution, Var } from '../src/types';
-import { find, assv, occurs, ext_s, unify, equality } from '../src/microKanren';
+import { find, assv, occurs, ext_s, unify, equality, call_fresh } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -154,4 +154,8 @@ describe('equality', () => {
   });
 });
 
-
+describe('call_fresh', () => {
+  it('adds a new variable to the substitution', () => {
+    expect(call_fresh((num: Var) => equality(num, 'a'))([[], 0])).toEqual([[[[0, 'a']], 1]]);
+  });
+});
