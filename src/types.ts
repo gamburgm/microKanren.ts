@@ -7,15 +7,15 @@ export type Substitution = Association[];
 export type Association = [number, Term];
 
 export type Stream =
-  | MatureStream
-  | ImmatureStream;
+  | MatureStream;
+  // | ImmatureStream;
 
 // I have no idea if this type is correct
 export type MatureStream = 
   | null
   | State[];
 
-export type ImmatureStream = () => Stream;
+// export type ImmatureStream = () => Stream;
 
 
 export type Var = number;

@@ -1,5 +1,5 @@
 import { Substitution, Var } from '../src/types';
-import { find, assv, occurs, ext_s, unify, equality, call_fresh } from '../src/microKanren';
+import { find, assv, occurs, ext_s, unify, equality, call_fresh, disj, conj } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -159,3 +159,29 @@ describe('call_fresh', () => {
     expect(call_fresh((num: Var) => equality(num, 'a'))([[], 0])).toEqual([[[[0, 'a']], 1]]);
   });
 });
+
+describe('disj', () => {
+  it('appends all valid states from two goals as the final output stream', () => {
+    expect(disj(
+             call_fresh((x: Var) => equality(x, 'z')),
+             call_fresh((x: Var) => equality(x, ['s', 'z']))
+           )([[], 0])
+          ).toEqual([[[[0, 'z']], 1], [[[0, ['s', 'z']]], 1]]);
+  });
+});
+
+describe('conj', () => {
+  it('executes two goals in the same context', () => {
+    expect(call_fresh((x: Var) => {
+      return call_fresh((y: Var) => {
+        return conj(equality(x, y), equality(x, 'z'));
+      });
+    })([[], 0])).toEqual([[[[0, 1], [1, 'z']], 2]]);
+  });
+});
+
+// functions to write more tests for:
+// 1. call_fresh
+// 2. disj
+// 3. conj
+// call_fresh: fuck with it, what else

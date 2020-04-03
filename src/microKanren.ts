@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair, Stream } from './types';
+import util from 'util';
 
 export function makeVar(n: number): number { return n; } // is this really necessary?
 export function isVar(t: Term): t is number { return typeof t === 'number'; } // same here
@@ -77,6 +78,24 @@ export function call_fresh(goal_ctor: (new_var: Var) => Goal): Goal {
   }
 }
 
+// append the valid States that result from the execution of the two goals
 export function disj(goal1: Goal, goal2: Goal): Goal {
+  return (input: State): Stream => {
+    return [...goal1(input), ...goal2(input)];
+  }
 }
 
+// execute the second goal on the resulting states from the first goal
+export function conj(goal1: Goal, goal2: Goal): Goal {
+  return (input: State): Stream => {
+    return goal1(input).reduce((prev_stream: Stream, next_state: State): Stream => {
+      return prev_stream.concat(goal2(next_state));
+    }, []);
+  }
+}
+
+
+
+function pretty_print(contents: any): void {
+  console.log(util.inspect(contents, false, null, true));
+}
