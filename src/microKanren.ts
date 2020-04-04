@@ -118,6 +118,25 @@ export function common_part(t1: Term, t2: Term): Maybe<Term> {
   }
 }
 
+// why is everything a term?
+// what is the correct return type here?
+export function frontier(t1: Term, t2: Term): any {
+  if (isVar(t1)) {
+    if (isVar(t2)) return [[[Math.min(t1, t2), Math.max(t1, t2)], []]];
+    else return [[[t1], [t2]]];
+  } else if (isSym(t1)) {
+    if (isSym(t2)) return [];
+    else if (isVar(t2)) return [[[t2], [t1]]];
+    else return [];
+  } else if (isPair(t1)) {
+    if (isVar(t2)) return [[[t2], [t1]]];
+    if (isSym(t2)) return [];
+    else {
+      return [...frontier(t1[0], t2[0]), ...frontier(t1[1], t2[1])];
+    }
+  }
+}
+
 function pretty_print(contents: any): void {
   console.log(util.inspect(contents, false, null, true));
 }

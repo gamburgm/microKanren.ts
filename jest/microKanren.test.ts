@@ -1,5 +1,5 @@
 import { Substitution, Var } from '../src/types';
-import { find, assv, occurs, ext_s, unify, equality, call_fresh, disj, conj, common_part } from '../src/microKanren';
+import { find, assv, occurs, ext_s, unify, equality, call_fresh, disj, conj, common_part, frontier } from '../src/microKanren';
 
 // Constants/Data Examples
 const sub0: Substitution = [];
@@ -243,6 +243,77 @@ describe('Common Part', () => {
 
   it('blows up on conflicting symbols in nested structure', () => {
     expect(common_part([['a', ['b', 'c']], 4], [['a', ['b', 'd']], ['a', ['b', 'c']]])).toEqual(false);
+  });
+});
+
+describe('The Frontier', () => {
+  it('finds the frontier of two equal syms', () => {
+    expect(frontier('a', 'a')).toEqual([]);
+  });
+
+  it('finds the frontier of two unequal symbols', () => {
+    expect(frontier('a', 'b')).toEqual([]);
+  });
+
+  it('finds the frontier of two variables', () => {
+    expect(frontier(1, 2)).toEqual([[[1, 2], []]]);
+  });
+
+  it('finds the frontier of two equal variables', () => {
+    expect(frontier(1, 1)).toEqual([[[1], []]]);
+  });
+
+  it('finds the frontier of a variable and a symbol', () => {
+    expect(frontier(1, 'a')).toEqual([[[1], ['a']]]);
+  });
+
+  it('finds the frontier of a symbol first and a variable second', () => {
+    expect(frontier('a', 1)).toEqual([[[1], ['a']]]);
+  });
+
+  it('finds the frontier of a pair of symbols', () => {
+    expect(frontier(['a', 'b'], ['a', 'b'])).toEqual([]);
+  });
+
+  it('finds the frontier of pairs of unequal symbols', () => {
+    expect(frontier(['a', 'a'], ['b', 'b'])).toEqual([]);
+  });
+
+  it('finds the frontier of pairs of variables and symbols', () => {
+    expect(frontier([1, 2], ['a', 'b'])).toEqual([[[1], ['a']], [[2], ['b']]]);
+  });
+
+  it('finds the frontier of pairs of mixed variables and symbols', () => {
+    expect(frontier(['a', 2], [1, 'b'])).toEqual([[[1], ['a']], [[2], ['b']]]);
+  });
+
+  it('finds the frontier of overlapping variables in pairs', () => {
+    expect(frontier([1, 2], [2, 1])).toEqual([[[1, 2], []]]);
+  });
+
+  it('finds no frontier when matching a symbol to a pair', () => {
+    expect(frontier('a', [1, 2])).toEqual([]);
+  });
+
+  it('finds the frontier of structures pairs and variables', () => {
+    expect(frontier([1, 'a'], [['a', 'b'], 'a'])).toEqual([[[1], ['a', 'b']]]);
+  });
+
+  it('handles nested structures', () => {
+    expect(frontier([['a', 1], [2, ['b', 'c']]], [3, [['x', 'y'], 4]])).toEqual([
+      [[3], ['a', 1]],
+      [[2], ['x', 'y']],
+      [[4], ['b', 'c']]
+    ]);
+  });
+
+  it('handles nested structures with overlapping variables', () => {
+    expect(frontier([['a', 2], ['b', 3]], [['a', 4], 6])).toEqual([[[6], ['b', 3]]]);
+  });
+
+  // IDK about this one
+  it('finds nothing on conflicting symbols in nested structure', () => {
+    expect(frontier([['a', ['b', 'c']], 4], [['a', ['b', 'd']], ['a', ['b', 'c']]])).toEqual(false);
   });
 });
 
