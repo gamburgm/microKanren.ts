@@ -256,19 +256,19 @@ describe('The Frontier', () => {
   });
 
   it('finds the frontier of two variables', () => {
-    expect(frontier(1, 2)).toEqual([[[1, 2], []]]);
+    expect(frontier(1, 2)).toEqual([[1, null]]);
   });
 
   it('finds the frontier of two equal variables', () => {
-    expect(frontier(1, 1)).toEqual([[[1], []]]);
+    expect(frontier(1, 1)).toEqual([[1,  null]]);
   });
 
   it('finds the frontier of a variable and a symbol', () => {
-    expect(frontier(1, 'a')).toEqual([[[1], ['a']]]);
+    expect(frontier(1, 'a')).toEqual([[1, 'a']]);
   });
 
   it('finds the frontier of a symbol first and a variable second', () => {
-    expect(frontier('a', 1)).toEqual([[[1], ['a']]]);
+    expect(frontier('a', 1)).toEqual([[1, 'a']]);
   });
 
   it('finds the frontier of a pair of symbols', () => {
@@ -280,15 +280,16 @@ describe('The Frontier', () => {
   });
 
   it('finds the frontier of pairs of variables and symbols', () => {
-    expect(frontier([1, 2], ['a', 'b'])).toEqual([[[1], ['a']], [[2], ['b']]]);
+    expect(frontier([1, 2], ['a', 'b'])).toEqual([[1, 'a'], [2, 'b']]);
   });
 
   it('finds the frontier of pairs of mixed variables and symbols', () => {
-    expect(frontier(['a', 2], [1, 'b'])).toEqual([[[1], ['a']], [[2], ['b']]]);
+    expect(frontier(['a', 2], [1, 'b'])).toEqual([[1, 'a'], [2, 'b']]);
   });
 
+  // not good
   it('finds the frontier of overlapping variables in pairs', () => {
-    expect(frontier([1, 2], [2, 1])).toEqual([[[1, 2], []]]);
+    expect(frontier([1, 2], [2, 1])).toEqual([[1, null], [2, null]]);
   });
 
   it('finds no frontier when matching a symbol to a pair', () => {
@@ -296,24 +297,24 @@ describe('The Frontier', () => {
   });
 
   it('finds the frontier of structures pairs and variables', () => {
-    expect(frontier([1, 'a'], [['a', 'b'], 'a'])).toEqual([[[1], ['a', 'b']]]);
+    expect(frontier([1, 'a'], [['a', 'b'], 'a'])).toEqual([[1, ['a', 'b']]]);
   });
 
   it('handles nested structures', () => {
     expect(frontier([['a', 1], [2, ['b', 'c']]], [3, [['x', 'y'], 4]])).toEqual([
-      [[3], ['a', 1]],
-      [[2], ['x', 'y']],
-      [[4], ['b', 'c']]
+      [3, ['a', 1]],
+      [2, ['x', 'y']],
+      [4, ['b', 'c']]
     ]);
   });
 
   it('handles nested structures with overlapping variables', () => {
-    expect(frontier([['a', 2], ['b', 3]], [['a', 4], 6])).toEqual([[[6], ['b', 3]]]);
+    expect(frontier([['a', 2], ['b', 3]], [['a', 4], 6])).toEqual([[2, null], [6, ['b', 3]]]);
   });
 
   // IDK about this one
   it('finds nothing on conflicting symbols in nested structure', () => {
-    expect(frontier([['a', ['b', 'c']], 4], [['a', ['b', 'd']], ['a', ['b', 'c']]])).toEqual(false);
+    expect(frontier([['a', ['b', 'c']], 4], [['a', ['b', 'd']], ['a', ['b', 'c']]])).toEqual([[4, ['a', ['b', 'c']]]]);
   });
 });
 

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "noEmit": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "lib": ["ES2018", "dom"]
   }
 }

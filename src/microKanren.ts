@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair, Stream } from './types';
+import { Substitution, Goal, State, Term, Association, Maybe, Var, Pair, Stream, MEQ } from './types';
 import util from 'util';
 
 export function makeVar(n: number): number { return n; } 
@@ -118,23 +118,36 @@ export function common_part(t1: Term, t2: Term): Maybe<Term> {
   }
 }
 
+// frontier should definitely return set stuff
+// need new data
+// returns:
+// Listof multiequation
+// multiequation = [Listof Var . Listof Term]
+// but, they should be unique, so we should be returning a set.
+
 // why is everything a term?
 // what is the correct return type here?
-export function frontier(t1: Term, t2: Term): any {
+export function frontier(t1: Term, t2: Term): Array<MEQ> {
   if (isVar(t1)) {
-    if (isVar(t2)) return [[[Math.min(t1, t2), Math.max(t1, t2)], []]];
-    else return [[[t1], [t2]]];
+    if (isVar(t2)) return [[t1, null]];
+    else return [[t1, t2]];
   } else if (isSym(t1)) {
     if (isSym(t2)) return [];
-    else if (isVar(t2)) return [[[t2], [t1]]];
+    else if (isVar(t2)) return [[t2, t1]];
     else return [];
   } else if (isPair(t1)) {
-    if (isVar(t2)) return [[[t2], [t1]]];
+    if (isVar(t2)) return [[t2, t1]];
     if (isSym(t2)) return [];
     else {
       return [...frontier(t1[0], t2[0]), ...frontier(t1[1], t2[1])];
     }
   }
+}
+
+export function algorithm_b(meqs: Array<MEQ>): Array<MEQ> {
+  const final_meqs: Array<MEQ> = [];
+  
+  return final_meqs;
 }
 
 function pretty_print(contents: any): void {

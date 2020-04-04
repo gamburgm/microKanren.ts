@@ -31,3 +31,6 @@ export type Term = Var | Bool | Symbol | Empty | Pair;
 export type Maybe<T> = T | false;
 
 // NOTE: these are pretty poorly designed types. Should definitely clean this up.
+
+// ====== Martelli Types ======
+export type MEQ = [Var, Term];
