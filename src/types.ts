@@ -33,4 +33,25 @@ export type Maybe<T> = T | false;
 // NOTE: these are pretty poorly designed types. Should definitely clean this up.
 
 // ====== Martelli Types ======
-export type MEQ = [Var, Term];
+export interface System {
+  T: MultiEquation[];
+  U: MultiEquation[];
+}
+
+export interface MultiEquation {
+  erased: boolean;
+  S: SetOfVars;
+  M: Term[];
+}
+
+export interface SetOfVars {
+  counter: number;
+  vars: Var[];
+}
+
+export interface TempMultiEquation {
+  S: Term[];
+  M: Term[];
+}
+
+// has a variable type including a pointer to the defining multiequation
