@@ -1,4 +1,4 @@
-import { selectMult, matchTerms, ERRORS } from '../src/unify';
+import { selectMult, matchTerms, ERRORS, reduce, buildTerm } from '../src/unify';
 
 describe('selectMult', () => {
   it('explodes if multiequation is empty', () => {
@@ -99,4 +99,73 @@ describe('matchTerms', () => {
       },
     ]);
   });
+});
+
+describe('buildTerm', () => {
+  it('just returns the function if no symbol', () => {
+    expect(buildTerm('a', [])).toEqual('a');
+  });
+
+  it('constructs the proper term', () => {
+    expect(buildTerm('a', ['d', 'c', 'b'])).toEqual(['a', ['b', ['c', 'd']]]);
+  });
+
+  it('builds a simple function if only one arg', () => {
+    expect(buildTerm('a', ['b'])).toEqual(['a', 'b']);
+  });
+});
+
+describe('reduce', () => {
+  it('blows up when reducing a list of unequal symbols', () => {
+    expect(() => reduce(['a', 'b'])).toThrowError(ERRORS.SYM_MATCH);
+  });
+
+  it('blows up on non-matching function symbols', () => {
+    expect(() => reduce([['a', ['b', 'c']], ['x', ['b', 'c']]])).toThrowError(ERRORS.FUNC_MATCH);
+  });
+
+  it('blows up when there are no terms to reduce', () => {
+    expect(() => reduce([])).toThrowError(ERRORS.NO_TERMS);
+  });
+
+  it('returns a proper reduction of symbols', () => {
+    expect(reduce(['a', 'a'])).toEqual(['a', []]);
+  });
+
+  it('returns a proper reduction of functions', () => {
+    expect(reduce([['a', [['g', [1, 2]], 3]], ['a', [4, 3]]])).toEqual([
+      ['a', [4, 3]],
+      [
+        {
+          S: [4],
+          M: [['g', [1, 2]]],
+        },
+        {
+          S: [3, 3],
+          M: [],
+        },
+      ],
+    ]);
+  });
+
+  it('enters the recursive reduce case', () => {
+    expect(reduce([['a', [['x', 'y'], 2]], ['a', [['x', 1], 2]]])).toEqual([
+      ['a', [['x', 1], 2]],
+      [
+        {
+          S: [1],
+          M: ['y'],
+        },
+        {
+          S: [2, 2],
+          M: []
+        },
+      ],
+    ]);
+  });
+
+
+  // Other tests:
+  // 1. the recursive reduce case
+  // 2. ...
 });

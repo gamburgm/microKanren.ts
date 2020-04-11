@@ -1,11 +1,14 @@
-import { System, MultiEquation, TempMultiEquation, Term, Var } from './types';
+import { System, MultiEquation, TempMultiEquation, Term, Var, Pair } from './types';
 import { isSym, isVar, isPair } from './microKanren';
 
 export const ERRORS: Record<string, string> = {
-  NO_MULTS: 'Error: No Multiequations remain!',
+  NO_MULTS:     'Error: No Multiequations remain!',
   HEAD_INVALID: 'Error: Head is either erased on has references to it!',
-  NONE_FOUND: 'Error: No valid multiequations found!',
+  NONE_FOUND:   'Error: No valid multiequations found!',
   DIFF_NO_ARGS: 'Error: arguments to functions have different lengths!',
+  SYM_MATCH:    'Error: symbols don\'t match!',
+  FUNC_MATCH:   'Error: function symbols don\' match!',
+  NO_TERMS:     'Error: No terms to reduce!',
 };
 
 // Select the next MultiEquation to reduce
@@ -28,21 +31,21 @@ export function selectMult(U: MultiEquation[]): MultiEquation {
 export function reduce(M: Term[]): [Term, TempMultiEquation[]] {
   // must be either symbols or functions
   // if vars show up in reduce, you're boned, cuz it's always RHS.
-  if (M.length === 0) throw 'WTF'; // ???
+  if (M.length === 0) throw ERRORS.NO_TERMS; // ???
 
   if (isSym(M[0])) {
-    M.slice(1).forEach((t: Term) => { if (M[0] !== t) throw 'BAD'; });
+    M.slice(1).forEach((t: Term) => { if (M[0] !== t) throw ERRORS.SYM_MATCH; });
     return [M[0], []];
   }
 
   // we know it's a function (read: pair)
-  M.slice(1).forEach((t: Term) => { if (M[0][0] !== t[0]) throw 'BAD'; });
+  M.slice(1).forEach((t: Term) => { if (M[0][0] !== t[0]) throw ERRORS.FUNC_MATCH; });
   const tempMults: TempMultiEquation[] = matchTerms(M);
 
-  let cpArgs: Term;
-  let frontiers: TempMultiEquation[] = [];
+  const cpArgs: Term[] = [];
+  const frontiers: TempMultiEquation[] = [];
   // I think I need to go back to front
-  tempMults.reverse().forEach((tm: TempMultiEquation) => {
+  tempMults.slice().reverse().forEach((tm: TempMultiEquation) => {
     let cpArg: Term;
     let frontier: TempMultiEquation[];
 
@@ -53,11 +56,25 @@ export function reduce(M: Term[]): [Term, TempMultiEquation[]] {
       frontier = [tm];
     }
 
-    cpArgs = [cpArg, cpArgs];
-    frontiers = frontiers.concat(frontier);
+    cpArgs.push(cpArg);
+    frontiers.push(...frontier);
   });
 
-  return [[M[0][0], cpArgs], frontiers];
+  return [buildTerm(M[0][0], cpArgs), frontiers.reverse()];
+}
+
+export function buildTerm(fn: Term, args: Term[]): Term {
+  if (args.length === 0) return fn;
+  else if (args.length === 1) return [fn, args[0]];
+  else {
+    // Typescript can't tell that CP should be a valid Term because you have a list of length 2
+    let cp: Term = args.slice().reverse().slice(args.length - 2) as Pair;
+    cp = args.slice().reverse().slice(0, args.length - 2).reduce((newCp: Term, t: Term) => {
+      return [t, newCp];
+    }, cp);
+
+    return [fn, cp];
+  }
 }
 
 export function matchTerms(M: Term[]): TempMultiEquation[] {
