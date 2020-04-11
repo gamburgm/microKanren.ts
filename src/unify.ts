@@ -1,10 +1,11 @@
 import { System, MultiEquation, TempMultiEquation, Term, Var } from './types';
-import { isSym, isVar } from './microKanren';
+import { isSym, isVar, isPair } from './microKanren';
 
 export const ERRORS: Record<string, string> = {
   NO_MULTS: 'Error: No Multiequations remain!',
   HEAD_INVALID: 'Error: Head is either erased on has references to it!',
   NONE_FOUND: 'Error: No valid multiequations found!',
+  DIFF_NO_ARGS: 'Error: arguments to functions have different lengths!',
 };
 
 // Select the next MultiEquation to reduce
@@ -36,23 +37,56 @@ export function reduce(M: Term[]): [Term, TempMultiEquation[]] {
 
   // we know it's a function (read: pair)
   M.slice(1).forEach((t: Term) => { if (M[0][0] !== t[0]) throw 'BAD'; });
-  const tempMults: TempMultiEquation[] = [];
-  const functionArgs: Term[] = M.map((t: Term) => t[0]);
+  const tempMults: TempMultiEquation[] = matchTerms(M);
 
-  while (functionArgs[0]) {
+  let cpArgs: Term;
+  let frontiers: TempMultiEquation[] = [];
+  // I think I need to go back to front
+  tempMults.reverse().forEach((tm: TempMultiEquation) => {
+    let cpArg: Term;
+    let frontier: TempMultiEquation[];
+
+    if (tm.S.length === 0) {
+      [cpArg, frontier] = reduce(tm.M);
+    } else {
+      cpArg = tm.S[0];
+      frontier = [tm];
+    }
+
+    cpArgs = [cpArg, cpArgs];
+    frontiers = frontiers.concat(frontier);
+  });
+
+  return [[M[0][0], cpArgs], frontiers];
+}
+
+export function matchTerms(M: Term[]): TempMultiEquation[] {
+  const temp: TempMultiEquation[] = [];
+  let termsToMatch: Term[] = M;
+
+  while (termsToMatch[0]) {
+    termsToMatch = termsToMatch.map((t: Term) => t[1]);
+    const seenPair = isPair(termsToMatch[0]);
+
     const tempMult: TempMultiEquation = { S: [], M: [] };
-    functionArgs.forEach((t: Term, idx: number) => {
-      const arg: Term = t[0];
-      if (isVar(arg)) {
-        tempMult.S.push(arg);
-      } else { 
-        tempMult.M.push(arg);
+
+    termsToMatch.forEach((t: Term) => {
+      if ((seenPair && !isPair(t)) || (!seenPair && isPair(t))) throw ERRORS.DIFF_NO_ARGS;
+      if (isPair(t)) {
+        if (isVar(t[0])) tempMult.S.push(t[0]);
+        else tempMult.M.push(t[0]);
       }
-      // functionArgs[idx] = functionArgs[idx][1];
-      // TODO WHY IS THIS FUCKING WITH MY LINTING?
+      else {
+        if (isVar(t)) tempMult.S.push(t);
+        else tempMult.M.push(t);
+      }
     });
-    tempMults.push(tempMult);
+
+    temp.push(tempMult);
+    if (!seenPair) break;
   }
+
+  return temp;
 }
 
 // 1. make sure all the top-level terms in M agree (and same # of args)
