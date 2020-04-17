@@ -1,36 +1,62 @@
 import { selectMult, matchTerms, ERRORS, reduce, buildTerm } from '../src/unify';
+import { MultiEquation, VarWrap, Var, UnifiableTerm } from '../src/types';
 
-describe('selectMult', () => {
+const createVar = (v: Var): VarWrap => ({ name: v, mult: null });
+const assignVar = (v: VarWrap, meq: MultiEquation): void => { v.mult = meq };
+
+const buildMeq = (vars: VarWrap[], terms: UnifiableTerm[], counter: number, erased: boolean): MultiEquation => {
+  const meq: MultiEquation = { erased, S: { counter, vars }, M: terms };
+  vars.forEach((v: VarWrap) => assignVar(v, meq));
+  return meq;
+};
+
+let VAR_ONE:   VarWrap;
+let VAR_TWO:   VarWrap;
+let VAR_THREE: VarWrap;
+let VAR_FOUR:  VarWrap;
+let VAR_FIVE:  VarWrap;
+let VAR_SIX:   VarWrap;
+
+beforeEach(() => {
+  VAR_ONE = createVar(1);
+  VAR_TWO = createVar(2);
+  VAR_THREE = createVar(3);
+  VAR_FOUR = createVar(4);
+  VAR_FIVE = createVar(5);
+  VAR_SIX = createVar(6);
+});
+
+describe.only('selectMult', () => {
   it('explodes if multiequation is empty', () => {
     expect(() => selectMult([])).toThrowError(ERRORS.NO_MULTS);
   });
 
   it('explodes if head erased', () => {
-    expect(() => selectMult([
-      { erased: false, S: { counter: 0, vars: [1, 2] }, M: [3] },
-      { erased: true, S: { counter: 1, vars: [3, 4] }, M: ['x'] },
-    ])).toThrowError(ERRORS.HEAD_INVALID);
+    const FIRST_MEQ = buildMeq([VAR_ONE, VAR_TWO], [VAR_THREE], 0, false);
+    const SECOND_MEQ = buildMeq([VAR_THREE, VAR_FOUR], ['x'], 1, true);
+
+    expect(() => selectMult([FIRST_MEQ, SECOND_MEQ])).toThrowError(ERRORS.HEAD_INVALID);
   });
 
   it('explodes if references remain to head', () => {
-    expect(() => selectMult([
-      { erased: false, S: { counter: 0, vars: [1] }, M: [1] },
-      { erased: false, S: { counter: 1, vars: [2] }, M: ['x'] },
-    ])).toThrowError(ERRORS.HEAD_INVALID);
+    const FIRST_MEQ = buildMeq([VAR_ONE], [VAR_ONE], 0, false);
+    const SECOND_MEQ = buildMeq([VAR_TWO], ['x'], 1, false);
+
+    expect(() => selectMult([FIRST_MEQ, SECOND_MEQ])).toThrowError(ERRORS.HEAD_INVALID);
   });
 
   it('explodes if everything but head erased', () => {
-    expect(() => selectMult([
-      { erased: true, S: { counter: 0, vars: [1] }, M: ['x'] },
-      { erased: false, S: { counter: 0, vars: [2] }, M: ['y'] },
-    ])).toThrowError(ERRORS.NONE_FOUND);
+    const FIRST_MEQ = buildMeq([VAR_ONE], ['x'], 0, true);
+    const SECOND_MEQ = buildMeq([VAR_TWO], ['y'], 0, false);
+
+    expect(() => selectMult([FIRST_MEQ, SECOND_MEQ])).toThrowError(ERRORS.NONE_FOUND);
   });
 
   it('finds a good head', () => {
-    expect(selectMult([
-      { erased: false, S: { counter: 0, vars: [2] }, M: ['y'] },
-      { erased: false, S: { counter: 0, vars: [1] }, M: ['x'] },
-    ])).toEqual({ erased: false, S: { counter: 0, vars: [2] }, M: ['y'] });
+    const FIRST_MEQ = buildMeq([VAR_TWO], ['y'], 0, false);
+    const SECOND_MEQ = buildMeq([VAR_ONE], ['x'], 0, false);
+
+    expect(selectMult([FIRST_MEQ, SECOND_MEQ])).toEqual(FIRST_MEQ);
   });
 });
 
