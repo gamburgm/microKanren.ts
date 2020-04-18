@@ -1,4 +1,4 @@
-import { MultiEquation, TempMultiEquation, UnifiableList, VarWrap, UnifiableTerm, Symbol, UnifiableFun } from './types';
+import { MultiEquation, TempMultiEquation, UnifiableList, VarWrap, UnifiableTerm, Symbol, UnifiableFun, System } from './types';
 
 export const ERRORS: Record<string, string> = {
   NO_MULTS:     'Error: No Multiequations remain!',
@@ -19,6 +19,20 @@ export function isSym(t: UnifiableTerm): t is string { return typeof t === 'stri
 
 export function isList(t: UnifiableTerm): t is UnifiableList { return Array.isArray(t) && t.length === 2; }
 
+export function unify(R: System): MultiEquation[] {
+  while (!R.U.every((meq: MultiEquation) => meq.erased)) {
+    const mult: MultiEquation = selectMult(R.U);
+    if (mult.M.length > 0) {
+      const [cp, frontier] = reduce(mult.M)
+      compact(frontier, R.U);
+      mult.M = [cp];
+    }
+    R.T.push(mult);
+  }
+
+  return R.T;
+}
+
 
 // Select the next MultiEquation to reduce
 export function selectMult(U: MultiEquation[]): MultiEquation {
@@ -30,14 +44,14 @@ export function selectMult(U: MultiEquation[]): MultiEquation {
   U[headOfList].erased = true;
 
   while (headOfList >= 0 && U[headOfList].erased) {
-    headOfList -= 1;
+    headOfList -= 1; // TODO I believe it's actually popping!
   }
 
   if (headOfList < 0) throw ERRORS.NONE_FOUND;
   return U[headOfList];
 }
 
-export function reduce(M: UnifiableFun[]): [UnifiableTerm, TempMultiEquation[]] {
+export function reduce(M: UnifiableFun[]): [UnifiableFun, TempMultiEquation[]] {
   if (M.length === 0) throw ERRORS.NO_TERMS; // ??? Should I be throwing?
 
   // what do you do about there being these mixed up?
@@ -98,8 +112,8 @@ export function compact(F: TempMultiEquation[], U: MultiEquation[]): void {
   }
 }
 
-export function buildTerm(fn: UnifiableTerm, args: UnifiableTerm[]): UnifiableTerm {
-  if (args.length === 0) return fn;
+export function buildTerm(fn: UnifiableTerm, args: UnifiableTerm[]): UnifiableFun {
+  if (args.length === 0) return fn as Symbol;
   else {
     let BASE: UnifiableList = [];
     const rest = args.reduce<UnifiableList>((l: UnifiableList, arg: UnifiableTerm): UnifiableList => {

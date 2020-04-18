@@ -1,4 +1,4 @@
-import { selectMult, matchTerms, ERRORS, reduce, buildTerm, compact } from '../src/unify';
+import { selectMult, matchTerms, ERRORS, reduce, buildTerm, compact, unify } from '../src/unify';
 import { MultiEquation, VarWrap, Var, UnifiableTerm, UnifiableList, UnifiableFun, TempMultiEquation } from '../src/types';
 
 const createVar = (v: Var): VarWrap => ({ name: v, mult: null });
@@ -329,4 +329,15 @@ describe('compact', () => {
   });
 
   // many things compacting
+});
+
+describe('unify', () => {
+  it('works', () => {
+    expect(unify({
+      T: [],
+      U: [buildMeq([VAR_ONE], ['x'], 0, false),
+          buildMeq([VAR_TWO], ['y'], 0, false),
+          buildMeq([VAR_THREE], [makeList('f', 'x', 'y')], 0, false)],
+    })).toEqual([]);
+  });
 });
