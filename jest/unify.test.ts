@@ -1,23 +1,19 @@
 import { selectMult, matchTerms, ERRORS, reduce, buildTerm } from '../src/unify';
-import { MultiEquation, VarWrap, Var, UnifiableTerm } from '../src/types';
+import { MultiEquation, VarWrap, Var, UnifiableTerm, UnifiableList, UnifiableFun } from '../src/types';
 
 const createVar = (v: Var): VarWrap => ({ name: v, mult: null });
 const assignVar = (v: VarWrap, meq: MultiEquation): void => { v.mult = meq };
 
-const buildMeq = (vars: VarWrap[], terms: UnifiableTerm[], counter: number, erased: boolean): MultiEquation => {
+const buildMeq = (vars: VarWrap[], terms: UnifiableFun[], counter: number, erased: boolean): MultiEquation => {
   const meq: MultiEquation = { erased, S: { counter, vars }, M: terms };
   vars.forEach((v: VarWrap) => assignVar(v, meq));
   return meq;
 };
 
-const makeList = (...terms: UnifiableTerm[]): UnifiableTerm => {
-  if (terms.length === 0) return [];
-  if (terms.length === 1) return terms[0];
-  
-  const BASE: UnifiableTerm = [];
-  return terms.slice().reverse().reduce((u: UnifiableTerm, t: UnifiableTerm) => {
+const makeList = (...terms: UnifiableTerm[]): UnifiableList => {
+  return terms.slice().reverse().reduce<UnifiableList>((u: UnifiableList, t: UnifiableTerm): UnifiableList => {
     return [t, u];
-  }, BASE);
+  }, []);
 };
 
 let VAR_ONE:   VarWrap;
@@ -42,14 +38,14 @@ describe('selectMult', () => {
   });
 
   it('explodes if head erased', () => {
-    const FIRST_MEQ = buildMeq([VAR_ONE, VAR_TWO], [VAR_THREE], 0, false);
+    const FIRST_MEQ = buildMeq([VAR_ONE, VAR_TWO], [makeList('a', VAR_THREE)], 0, false);
     const SECOND_MEQ = buildMeq([VAR_THREE, VAR_FOUR], ['x'], 1, true);
 
     expect(() => selectMult([FIRST_MEQ, SECOND_MEQ])).toThrowError(ERRORS.HEAD_INVALID);
   });
 
   it('explodes if references remain to head', () => {
-    const FIRST_MEQ = buildMeq([VAR_ONE], [VAR_ONE], 0, false);
+    const FIRST_MEQ = buildMeq([VAR_ONE], [makeList('a', VAR_ONE)], 0, false);
     const SECOND_MEQ = buildMeq([VAR_TWO], ['x'], 1, false);
 
     expect(() => selectMult([FIRST_MEQ, SECOND_MEQ])).toThrowError(ERRORS.HEAD_INVALID);
@@ -70,13 +66,13 @@ describe('selectMult', () => {
   });
 });
 
-describe.only('matchTerms', () => {
+describe('matchTerms', () => {
   it('blows up on unequal lengths of lists', () => {
     expect(() => matchTerms([makeList('a', VAR_ONE), makeList('a', VAR_ONE, VAR_TWO)])).toThrowError(ERRORS.DIFF_NO_ARGS);
   });
 
   it('succeeds on equal list lengths', () => {
-    expect(matchTerms([makeList('a', VAR_ONE, 'b', 'c'), makeList('a', 'x', 'b', VAR_FIVE)])).toEqual([
+    expect(matchTerms([makeList(VAR_ONE, 'b', 'c'), makeList('x', 'b', VAR_FIVE)])).toEqual([
       {
         S: [VAR_ONE],
         M: ['x'],
@@ -92,17 +88,18 @@ describe.only('matchTerms', () => {
     ]);
   });
 
+  // NOTE: things are in the correct order now LOL
   it('succeeds on matching a single var against a pair', () => {
-    expect(matchTerms([VAR_ONE, makeList('a', 'b')])).toEqual([
+    expect(matchTerms([makeList(VAR_ONE), makeList(makeList('a', 'b'))])).toEqual([
       {
         S: [VAR_ONE],
-        M: makeList('b', 'a')
+        M: [makeList('a', 'b')]
       },
     ]);
   });
 
   it('succeeds on a greater number of equal-length lists', () => {
-    expect(matchTerms([makeList('a', VAR_ONE, 'c', 'd'), makeList('a', 'x', VAR_TWO, VAR_THREE), makeList('a', VAR_THREE, VAR_FIVE, VAR_SIX)])).toEqual([
+    expect(matchTerms([makeList(VAR_ONE, 'c', 'd'), makeList('x', VAR_TWO, VAR_THREE), makeList(VAR_THREE, VAR_FIVE, VAR_SIX)])).toEqual([
       {
         S: [VAR_ONE, VAR_THREE],
         M: ['x'],
@@ -119,10 +116,10 @@ describe.only('matchTerms', () => {
   });
 
   it('can store functions in arguments', () => {
-    expect(matchTerms([makeList('a', makeList('x', 'y', 'z'), VAR_ONE), makeList('a', VAR_TWO, VAR_THREE)])).toEqual([
+    expect(matchTerms([makeList(makeList('x', 'y', 'z'), VAR_ONE), makeList(VAR_TWO, VAR_FOUR)])).toEqual([
       {
         S: [VAR_TWO],
-        M: [['x', ['y', 'z']]],
+        M: [makeList('x', 'y', 'z')]
       },
       {
         S: [VAR_ONE, VAR_FOUR],
@@ -132,14 +129,14 @@ describe.only('matchTerms', () => {
   });
 
   it('can store functions as the final argument in a list', () => {
-    expect(matchTerms([makeList('a', makeList('x', 'y', 'z'), VAR_ONE), makeList('a', VAR_TWO, makeList('r', 'e', 'f'))])).toEqual([
+    expect(matchTerms([makeList(makeList('x', 'y', 'z'), VAR_ONE), makeList(VAR_TWO, makeList('r', 'e', 'f'))])).toEqual([
       {
         S: [VAR_TWO],
-        M: [['x', ['y', 'z']]],
+        M: [makeList('x', 'y', 'z')]
       },
       {
-        S: [VAR_TWO],
-        M: [['r', ['e', 'f']]]
+        S: [VAR_ONE],
+        M: [makeList('r', 'e', 'f')]
       },
     ]);
   });
@@ -151,11 +148,11 @@ describe('buildTerm', () => {
   });
 
   it('constructs the proper term', () => {
-    expect(buildTerm('a', ['d', 'c', 'b'])).toEqual(['a', ['b', ['c', 'd']]]);
+    expect(buildTerm('a', ['d', 'c', 'b'])).toEqual(['a', ['b', ['c', ['d', []]]]]);
   });
 
   it('builds a simple function if only one arg', () => {
-    expect(buildTerm('a', ['b'])).toEqual(['a', 'b']);
+    expect(buildTerm('a', ['b'])).toEqual(['a', ['b', []]]);
   });
 });
 
@@ -165,7 +162,7 @@ describe('reduce', () => {
   });
 
   it('blows up on non-matching function symbols', () => {
-    expect(() => reduce([['a', ['b', 'c']], ['x', ['b', 'c']]])).toThrowError(ERRORS.FUNC_MATCH);
+    expect(() => reduce([makeList('a', 'b', 'c'), makeList('x', 'b', 'c')])).toThrowError(ERRORS.FUNC_MATCH);
   });
 
   it('blows up when there are no terms to reduce', () => {
@@ -177,15 +174,15 @@ describe('reduce', () => {
   });
 
   it('returns a proper reduction of functions', () => {
-    expect(reduce([['a', [['g', [1, 2]], 3]], ['a', [4, 3]]])).toEqual([
-      ['a', [4, 3]],
+    expect(reduce([makeList('a', makeList('g', VAR_ONE, VAR_TWO), VAR_THREE), makeList('a', VAR_FOUR, VAR_THREE)])).toEqual([
+      makeList('a', VAR_FOUR, VAR_THREE),
       [
         {
-          S: [4],
-          M: [['g', [1, 2]]],
+          S: [VAR_FOUR],
+          M: [makeList('g', VAR_ONE, VAR_TWO)],
         },
         {
-          S: [3, 3],
+          S: [VAR_THREE, VAR_THREE],
           M: [],
         },
       ],
@@ -193,23 +190,18 @@ describe('reduce', () => {
   });
 
   it('enters the recursive reduce case', () => {
-    expect(reduce([['a', [['x', 'y'], 2]], ['a', [['x', 1], 2]]])).toEqual([
-      ['a', [['x', 1], 2]],
+    expect(reduce([makeList('a', makeList('x', 'y'), VAR_TWO), makeList('a', makeList('x', VAR_ONE), VAR_TWO)])).toEqual([
+      makeList('a', makeList('x', VAR_ONE), VAR_TWO),
       [
         {
-          S: [1],
+          S: [VAR_ONE],
           M: ['y'],
         },
         {
-          S: [2, 2],
+          S: [VAR_TWO, VAR_TWO],
           M: []
         },
       ],
     ]);
   });
-
-
-  // Other tests:
-  // 1. the recursive reduce case
-  // 2. ...
 });

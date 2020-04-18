@@ -59,7 +59,7 @@ export function reduce(M: UnifiableFun[]): [UnifiableTerm, TempMultiEquation[]] 
     if (tm.S.length === 0) {
       let [cpArg, frontier] = reduce(tm.M);
       cpArgs.push(cpArg);
-      frontier.push(...frontier);
+      frontiers.push(...frontier);
     } else {
       cpArgs.push(tm.S[0]);
       frontiers.push(tm);
@@ -73,9 +73,11 @@ export function buildTerm(fn: UnifiableTerm, args: UnifiableTerm[]): UnifiableTe
   if (args.length === 0) return fn;
   else {
     let BASE: UnifiableList = [];
-    return args.reduceRight((l: UnifiableList, arg: UnifiableTerm) => {
+    const rest = args.reduce<UnifiableList>((l: UnifiableList, arg: UnifiableTerm): UnifiableList => {
       return [arg, l];
     }, BASE);
+
+    return [fn, rest];
   }
 }
 
@@ -95,6 +97,8 @@ export function matchTerms(listOfArgs: UnifiableList[]): TempMultiEquation[] {
     temp.push(tempMult);
     listOfArgs = listOfArgs.map((l: UnifiableList) => l[1]);
   }
+  // not very performant...
+  if (!listOfArgs.every((l: UnifiableList) => l.length === 0)) throw ERRORS.DIFF_NO_ARGS;
 
   return temp;
 }
