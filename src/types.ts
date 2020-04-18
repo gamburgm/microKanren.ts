@@ -41,7 +41,7 @@ export interface System {
 export interface MultiEquation {
   erased: boolean;
   S: SetOfVars;
-  M: UnifiableTerm[];
+  M: UnifiableFun[];
 }
 
 export interface SetOfVars {
@@ -50,8 +50,8 @@ export interface SetOfVars {
 }
 
 export interface TempMultiEquation {
-  S: UnifiableTerm[];
-  M: UnifiableTerm[];
+  S: VarWrap[];
+  M: UnifiableFun[];
 }
 
 export interface VarWrap {
@@ -59,7 +59,8 @@ export interface VarWrap {
   mult: MultiEquation;
 }
 
-export type UnifiablePair = [UnifiableTerm, UnifiableTerm];
-export type UnifiableTerm = VarWrap | Symbol | UnifiablePair | []; // an empty list signifies the end of a linked list
+export type UnifiableList = [UnifiableTerm, UnifiableList] | [];
+export type UnifiableFun = UnifiableList | Symbol;
+export type UnifiableTerm = VarWrap | Symbol | UnifiableList; // an empty list signifies the end of a linked list
 
 // has a variable type including a pointer to the defining multiequation

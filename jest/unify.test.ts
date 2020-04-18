@@ -10,6 +10,16 @@ const buildMeq = (vars: VarWrap[], terms: UnifiableTerm[], counter: number, eras
   return meq;
 };
 
+const makeList = (...terms: UnifiableTerm[]): UnifiableTerm => {
+  if (terms.length === 0) return [];
+  if (terms.length === 1) return terms[0];
+  
+  const BASE: UnifiableTerm = [];
+  return terms.slice().reverse().reduce((u: UnifiableTerm, t: UnifiableTerm) => {
+    return [t, u];
+  }, BASE);
+};
+
 let VAR_ONE:   VarWrap;
 let VAR_TWO:   VarWrap;
 let VAR_THREE: VarWrap;
@@ -26,7 +36,7 @@ beforeEach(() => {
   VAR_SIX = createVar(6);
 });
 
-describe.only('selectMult', () => {
+describe('selectMult', () => {
   it('explodes if multiequation is empty', () => {
     expect(() => selectMult([])).toThrowError(ERRORS.NO_MULTS);
   });
@@ -60,15 +70,15 @@ describe.only('selectMult', () => {
   });
 });
 
-describe('matchTerms', () => {
+describe.only('matchTerms', () => {
   it('blows up on unequal lengths of lists', () => {
-    expect(() => matchTerms([['a', 1], ['a', [1, 2]]])).toThrowError(ERRORS.DIFF_NO_ARGS);
+    expect(() => matchTerms([makeList('a', VAR_ONE), makeList('a', VAR_ONE, VAR_TWO)])).toThrowError(ERRORS.DIFF_NO_ARGS);
   });
 
   it('succeeds on equal list lengths', () => {
-    expect(matchTerms([['a', [1, ['b', 'c']]], ['a', ['x', ['b', 5]]]])).toEqual([
+    expect(matchTerms([makeList('a', VAR_ONE, 'b', 'c'), makeList('a', 'x', 'b', VAR_FIVE)])).toEqual([
       {
-        S: [1],
+        S: [VAR_ONE],
         M: ['x'],
       },
       {
@@ -76,51 +86,59 @@ describe('matchTerms', () => {
         M: ['b', 'b'],
       },
       {
-        S: [5],
+        S: [VAR_FIVE],
         M: ['c'],
       },
     ]);
   });
 
-  it('succeeds on a greater number of equal-length lists', () => {
-    expect(matchTerms([['a', [1, ['c', 'd']]], ['a', ['x', [2, 3]]], ['a', [3, [5, 6]]]])).toEqual([
+  it('succeeds on matching a single var against a pair', () => {
+    expect(matchTerms([VAR_ONE, makeList('a', 'b')])).toEqual([
       {
-        S: [1, 3],
+        S: [VAR_ONE],
+        M: makeList('b', 'a')
+      },
+    ]);
+  });
+
+  it('succeeds on a greater number of equal-length lists', () => {
+    expect(matchTerms([makeList('a', VAR_ONE, 'c', 'd'), makeList('a', 'x', VAR_TWO, VAR_THREE), makeList('a', VAR_THREE, VAR_FIVE, VAR_SIX)])).toEqual([
+      {
+        S: [VAR_ONE, VAR_THREE],
         M: ['x'],
       },
       {
-        S: [2, 5],
+        S: [VAR_TWO, VAR_FIVE],
         M: ['c'],
       },
       {
-        S: [3, 6],
+        S: [VAR_THREE, VAR_SIX],
         M: ['d'],
       },
     ]);
   });
 
   it('can store functions in arguments', () => {
-    expect(matchTerms([['a', [['x', ['y', 'z']], 1]], ['a', [2, 4]]])).toEqual([
+    expect(matchTerms([makeList('a', makeList('x', 'y', 'z'), VAR_ONE), makeList('a', VAR_TWO, VAR_THREE)])).toEqual([
       {
-        S: [2],
+        S: [VAR_TWO],
         M: [['x', ['y', 'z']]],
       },
       {
-        S: [1, 4],
+        S: [VAR_ONE, VAR_FOUR],
         M: []
       },
     ]);
   });
 
-  // this is IMPOSSIBLE to express with my data
   it('can store functions as the final argument in a list', () => {
-    expect(matchTerms([['a', [['x', ['y', 'z']], 1]], ['a', [2, ['r', ['e', 'f']]]]])).toEqual([
+    expect(matchTerms([makeList('a', makeList('x', 'y', 'z'), VAR_ONE), makeList('a', VAR_TWO, makeList('r', 'e', 'f'))])).toEqual([
       {
-        S: [2],
+        S: [VAR_TWO],
         M: [['x', ['y', 'z']]],
       },
       {
-        S: [1],
+        S: [VAR_TWO],
         M: [['r', ['e', 'f']]]
       },
     ]);
