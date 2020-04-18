@@ -1,4 +1,5 @@
 import { MultiEquation, TempMultiEquation, UnifiableList, VarWrap, UnifiableTerm, Symbol, UnifiableFun } from './types';
+import util from 'util';
 
 export const ERRORS: Record<string, string> = {
   NO_MULTS:     'Error: No Multiequations remain!',
@@ -67,6 +68,35 @@ export function reduce(M: UnifiableFun[]): [UnifiableTerm, TempMultiEquation[]] 
   }
     
   return [buildTerm(M[0][0], cpArgs), frontiers.reverse()];
+}
+
+export function compact(F: TempMultiEquation[], U: MultiEquation[]): void {
+  for (let i = F.length - 1; i >= 0; i--) {
+    const tmp: TempMultiEquation = F[i];
+    const mult: MultiEquation = tmp.S[0].mult;
+    mult.S.counter -= 1;
+
+    for (let j = tmp.S.length - 2; j >= 0; j--) {
+      const otherMult: MultiEquation = tmp.S[j].mult;
+      otherMult.S.counter -= 1;
+
+      if (mult !== otherMult) {
+        // TODO I am excluding the SWAP operation.
+        mult.S.counter += otherMult.S.counter;
+
+        for (let k = otherMult.S.vars.length - 1; k >= 0; k--) {
+          const v: VarWrap = otherMult.S.vars[k];
+          v.mult = mult;
+          mult.S.vars.push(v);
+        }
+        mult.M.push(...otherMult.M);
+        otherMult.erased = true;
+      }
+    }
+
+    if (mult.S.counter === 0) U.push(mult);
+    console.log(util.inspect(U, false, null, true));
+  }
 }
 
 export function buildTerm(fn: UnifiableTerm, args: UnifiableTerm[]): UnifiableTerm {

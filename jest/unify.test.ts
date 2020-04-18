@@ -1,5 +1,5 @@
-import { selectMult, matchTerms, ERRORS, reduce, buildTerm } from '../src/unify';
-import { MultiEquation, VarWrap, Var, UnifiableTerm, UnifiableList, UnifiableFun } from '../src/types';
+import { selectMult, matchTerms, ERRORS, reduce, buildTerm, compact } from '../src/unify';
+import { MultiEquation, VarWrap, Var, UnifiableTerm, UnifiableList, UnifiableFun, TempMultiEquation } from '../src/types';
 
 const createVar = (v: Var): VarWrap => ({ name: v, mult: null });
 const assignVar = (v: VarWrap, meq: MultiEquation): void => { v.mult = meq };
@@ -204,4 +204,41 @@ describe('reduce', () => {
       ],
     ]);
   });
+});
+
+describe('compact', () => {
+  it('compacts nothing', () => {
+    const U: MultiEquation[] = [];
+    compact([], U);
+    expect(U).toEqual([]);
+  });
+
+  it('has nothing to compact if no temp meqs', () => {
+    const FIRST: MultiEquation = buildMeq([VAR_ONE], ['x'], 1, false);
+    const U = [FIRST];
+    expect(U).toEqual([FIRST]);
+  });
+
+  it.only('does not compact non-overlapping meqs', () => {
+    const TMP: TempMultiEquation = {
+      S: [VAR_TWO],
+      M: ['x'],
+    };
+
+    const FIRST: MultiEquation = buildMeq([VAR_ONE], ['y'],  1, false);
+    const SECOND: MultiEquation = buildMeq([VAR_TWO], [], 1, false);
+    const THIRD: MultiEquation = buildMeq([VAR_THREE], [makeList('z', VAR_ONE)], 0, false);
+
+    const U = [FIRST, SECOND, THIRD];
+    compact([TMP], U);
+    expect(U).toEqual([
+      FIRST,
+      buildMeq([VAR_TWO], ['x'], 0, false), // when do things get moved forward?
+      THIRD,
+      buildMeq([VAR_TWO], ['x'], 0, false), // when do things get moved forward?
+    ]);
+  });
+
+
+  // there are more tests to write! don't forget it.
 });
