@@ -219,7 +219,7 @@ describe('compact', () => {
     expect(U).toEqual([FIRST]);
   });
 
-  it.only('does not compact non-overlapping meqs', () => {
+  it('does not compact non-overlapping meqs', () => {
     const TMP: TempMultiEquation = {
       S: [VAR_TWO],
       M: ['x'],
@@ -239,6 +239,94 @@ describe('compact', () => {
     ]);
   });
 
+  // simple case
+  it('compacts multiple equations to one', () => {
+    const TMP_ONE: TempMultiEquation = {
+      S: [VAR_ONE],
+      M: [makeList('x', 'y', 'z')]
+    };
 
-  // there are more tests to write! don't forget it.
+    const TMP_TWO: TempMultiEquation = {
+      S: [VAR_ONE],
+      M: [makeList('f', VAR_THREE)]
+    };
+
+    const TMP_THREE: TempMultiEquation = {
+      S: [VAR_ONE],
+      M: ['g']
+    };
+
+    const FIRST: MultiEquation = buildMeq([VAR_ONE], [], 3, false);
+    const SECOND: MultiEquation = buildMeq([VAR_TWO], [], 1, false);
+    const THIRD: MultiEquation = buildMeq([VAR_THREE], ['r'], 1, false);
+    const FOURTH: MultiEquation = buildMeq([VAR_FOUR], [], 0, true); // breaks on select?
+
+    const U = [FIRST, SECOND, THIRD, FOURTH];
+
+    compact([TMP_ONE, TMP_TWO, TMP_THREE], U);
+    const RES: MultiEquation = buildMeq([VAR_ONE], ['g', makeList('f', VAR_THREE), makeList('x', 'y', 'z')], 0, false);
+
+    expect(U).toEqual([
+      RES,
+      SECOND,
+      THIRD,
+      FOURTH,
+      RES,
+    ]);
+  });
+
+  it('compacts with many vars', () => {
+    const TMP: TempMultiEquation = {
+      S: [VAR_ONE, VAR_TWO],
+      M: ['a']
+    };
+
+    const FIRST: MultiEquation = buildMeq([VAR_TWO], ['b'], 1, false);
+    const SECOND: MultiEquation = buildMeq([VAR_ONE], [makeList('c', 'd')], 2, false);
+    const THIRD: MultiEquation = buildMeq([VAR_THREE], [makeList('a', 'b', 'c', 'd', 'e', VAR_ONE)], 0, false);
+
+    const U = [FIRST, SECOND, THIRD];
+    compact([TMP], U);
+
+    const RES: MultiEquation = buildMeq([VAR_TWO, VAR_ONE], ['b', makeList('c', 'd'), 'a'], 1, false);
+
+    expect(U).toEqual([
+      RES,
+      SECOND,
+      THIRD,
+    ]);
+    expect(SECOND.S.counter).toEqual(1);
+    expect(SECOND.erased).toEqual(true);
+  });
+
+  it('compacts many temps to many meqs', () => {
+    const TMP_ONE: TempMultiEquation = {
+      S: [VAR_ONE],
+      M: ['x'],
+    };
+
+    const TMP_TWO: TempMultiEquation = {
+      S: [VAR_TWO],
+      M: [makeList('r', VAR_ONE)],
+    };
+
+    const FIRST: MultiEquation = buildMeq([VAR_ONE], [], 3, false);
+    const SECOND: MultiEquation = buildMeq([VAR_TWO], [], 1, false);
+    const THIRD: MultiEquation = buildMeq([VAR_THREE, VAR_FOUR], [makeList('f', VAR_ONE, 'a')], 0, false);
+
+    const U = [FIRST, SECOND, THIRD];
+    compact([TMP_ONE, TMP_TWO], U);
+
+    const RES_ONE: MultiEquation = buildMeq([VAR_ONE], ['x'], 2, false);
+    const RES_TWO: MultiEquation = buildMeq([VAR_TWO], [makeList('r', VAR_ONE)], 0, false);
+
+    expect(U).toEqual([
+      RES_ONE,
+      RES_TWO,
+      THIRD,
+      RES_TWO,
+    ]);
+  });
+
+  // many things compacting
 });

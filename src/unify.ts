@@ -1,5 +1,4 @@
 import { MultiEquation, TempMultiEquation, UnifiableList, VarWrap, UnifiableTerm, Symbol, UnifiableFun } from './types';
-import util from 'util';
 
 export const ERRORS: Record<string, string> = {
   NO_MULTS:     'Error: No Multiequations remain!',
@@ -73,7 +72,7 @@ export function reduce(M: UnifiableFun[]): [UnifiableTerm, TempMultiEquation[]] 
 export function compact(F: TempMultiEquation[], U: MultiEquation[]): void {
   for (let i = F.length - 1; i >= 0; i--) {
     const tmp: TempMultiEquation = F[i];
-    const mult: MultiEquation = tmp.S[0].mult;
+    const mult: MultiEquation = tmp.S[tmp.S.length - 1].mult;
     mult.S.counter -= 1;
 
     for (let j = tmp.S.length - 2; j >= 0; j--) {
@@ -94,8 +93,8 @@ export function compact(F: TempMultiEquation[], U: MultiEquation[]): void {
       }
     }
 
+    mult.M.push(...tmp.M);
     if (mult.S.counter === 0) U.push(mult);
-    console.log(util.inspect(U, false, null, true));
   }
 }
 
