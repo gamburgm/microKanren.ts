@@ -28,6 +28,7 @@ export function unify(R: System): MultiEquation[] {
       mult.M = [cp];
     }
     R.T.push(mult);
+    console.log(R.T);
   }
 
   return R.T;
@@ -37,18 +38,16 @@ export function unify(R: System): MultiEquation[] {
 // Select the next MultiEquation to reduce
 export function selectMult(U: MultiEquation[]): MultiEquation {
   if (U.length === 0) throw ERRORS.NO_MULTS;
-  let headOfList: number = U.length - 1;
-  // WHY?
-  if (U[headOfList].erased === true || U[headOfList].S.counter !== 0) throw ERRORS.HEAD_INVALID;
-  // WHY?
-  U[headOfList].erased = true;
 
-  while (headOfList >= 0 && U[headOfList].erased) {
-    headOfList -= 1; // TODO I believe it's actually popping!
+  if (U[U.length - 1].erased === true || U[U.length - 1].S.counter !== 0) throw ERRORS.HEAD_INVALID;
+  U[U.length - 1].erased = true;
+
+  while (U.length > 0 && U[U.length - 1].erased) {
+    U.pop();
   }
 
-  if (headOfList < 0) throw ERRORS.NONE_FOUND;
-  return U[headOfList];
+  if (U.length === 0) throw ERRORS.NONE_FOUND;
+  return U[U.length - 1];
 }
 
 export function reduce(M: UnifiableFun[]): [UnifiableFun, TempMultiEquation[]] {
