@@ -1,5 +1,5 @@
 import { selectMultiEquation, ERRORS } from '../src/unify';
-import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Node } from '../src/types';
+import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Node, Cons } from '../src/types';
 
 const EMPTY_QUEUE_ERROR = 'Queue is empty!';
 
@@ -262,23 +262,31 @@ describe('unification', () => {
   });
 
   describe('selectMultiEquation', () => {
-    it('fails if there are no multiequations with no references', () => {
+    let U: U;
+
+    beforeEach(() => {
+      U = createU(
+        [createMeq([VAR_ONE], TERM_ONE, 0), createMeq([VAR_TWO], TERM_TWO, 0)],
+        [createMeq([VAR_THREE], TERM_THREE, 1)],
+      );
+    });
+      
+    it('blows up on empty', () => {
       expect(() => selectMultiEquation({ meqNum: 0, zeroCount: NULL, equations: NULL })).toThrowError(ERRORS.NO_MULTS);
     });
 
-    it.only('returns the correct multiequation', () => {
-      expect(selectMultiEquation(
-        createU(
-          [createMeq([VAR_ONE], TERM_ONE, 0), createMeq([VAR_TWO], TERM_TWO, 0)],
-          [createMeq([VAR_THREE], TERM_THREE, 1)],
-        )))
-        .toEqual(createMeq([VAR_TWO], TERM_TWO, 0));
+    it('returns the correct multiequation', () => {
+      expect(selectMultiEquation(U)).toEqual(createMeq([VAR_TWO], TERM_TWO, 0));
     });
 
     it('reduces the multiequation count', () => {
+      selectMultiEquation(U);
+      expect(U.meqNum).toEqual(2);
     });
 
     it('does not contain the returned multiequation any longer', () => {
+      selectMultiEquation(U);
+      expect((U.zeroCount as Cons<MultiEquation>).value).toEqual(createMeq([VAR_ONE], TERM_ONE, 0));
     });
   });
 });
