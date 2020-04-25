@@ -1,7 +1,5 @@
-import { selectMultiEquation, ERRORS } from '../src/unify';
-import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Node, Cons } from '../src/types';
-
-const EMPTY_QUEUE_ERROR = 'Queue is empty!';
+import { selectMultiEquation, ERRORS, enqueue, dequeue } from '../src/unify';
+import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Cons } from '../src/types';
 
 function makeList<T>(arr: Array<T>): List<T> {
   return arr.reduce((rest: List<T>, elem: T) => {
@@ -22,34 +20,6 @@ function makeQueue<T>(arr: Array<T>): Queue<T> {
   return q;
 }
 
-function enqueue<T>(q: Queue<T>, elem: T): void {
-  const node: Node<T> = { data: elem, next: null, prev: null };
-  if (!q.push) q.push = q.pop = node;
-  else {
-    node.next = q.push;
-    q.push.prev = node;
-    q.push = node;
-  }
-}
-
-function isEmptyQueue<T>(q: Queue<T>): boolean {
-  return q.pop === null;
-}
-
-function dequeue<T>(q: Queue<T>): T {
-  if (!q.pop) throw EMPTY_QUEUE_ERROR; 
-
-  const elem: T = q.pop.data;
-  
-  if (q.pop.prev) {
-    q.pop = q.pop.prev;
-    q.pop.next = null;
-  } else {
-    q.push = q.pop = null;
-  }
-
-  return elem;
-}
 
 const createVar = (v: number): MultiVar => {
   return {

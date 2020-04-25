@@ -125,3 +125,7 @@ export interface Queue<T> {
   push: ListNode<T>;
   pop: ListNode<T>;
 }
+
+export interface Pointer<T> {
+  val: T
+}
