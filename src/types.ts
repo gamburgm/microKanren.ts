@@ -32,7 +32,8 @@ export type Maybe<T> = T | false;
 
 // NOTE: these are pretty poorly designed types. Should definitely clean this up.
 
-// ====== Martelli Types ======
+// ====== BAD Martelli Types ======
+/*
 export interface System {
   T: MultiEquation[];
   U: MultiEquation[];
@@ -64,3 +65,63 @@ export type UnifiableFun = UnifiableList | Symbol;
 export type UnifiableTerm = VarWrap | Symbol | UnifiableList; // an empty list signifies the end of a linked list
 
 // has a variable type including a pointer to the defining multiequation
+*/
+
+// ====== Martelli Types Take 2 ======
+export interface System {
+  T: List<MultiEquation>;
+  U: U;
+}
+
+export interface U {
+  meqNum: number;
+  zeroCount: List<MultiEquation>;
+  equations: List<MultiEquation>;
+}
+
+export interface MultiTerm {
+  fsymb: string;
+  args: List<TempMeq>;
+}
+
+export interface MultiEquation {
+  counter: number;
+  varnum: number;
+  S: List<MultiVar>;
+  M: MultiTerm;
+}
+
+export interface TempMeq {
+  S: Queue<MultiVar>;
+  M: MultiTerm;
+}
+
+export interface MultiVar {
+  name: number;
+  M: MultiEquation;
+}
+
+export interface Cons<T> {
+  empty: false;
+  value: T;
+  rest: List<T>
+}
+
+export interface Null {
+  empty: true;
+}
+
+export type List<T> = Cons<T> | Null;
+
+export type ListNode<T> = Node<T> | null;
+
+export interface Node<T> {
+  data: T;
+  next: ListNode<T>;
+  prev: ListNode<T>;
+}
+
+export interface Queue<T> {
+  push: ListNode<T>;
+  pop: ListNode<T>;
+}
