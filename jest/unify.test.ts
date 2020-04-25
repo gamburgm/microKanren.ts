@@ -89,9 +89,10 @@ const createMeq = (vars: Array<MultiVar>, M: MultiTerm, counter: number): MultiE
 
 
 const NULL: Null = { empty: true };
+const EMPTY_QUEUE: Queue<MultiVar> = { push: null, pop: null };
 
 
-describe.only('Queue Functions', () => {
+describe('Queue Functions', () => {
   let Q: Queue<number>;
 
   beforeEach(() => {
@@ -195,19 +196,89 @@ describe.only('Queue Functions', () => {
   });
 });
 
+describe('unification', () => {
+  let VAR_ONE: MultiVar;
+  let VAR_TWO: MultiVar;
+  let VAR_THREE: MultiVar;
+  let VAR_FOUR: MultiVar;
+  let VAR_FIVE: MultiVar;
+  let VAR_SIX: MultiVar;
 
-describe('selectMultiEquation', () => {
-  it('fails if there are no multiequations with no references', () => {
-    expect(() => selectMultiEquation({ meqNum: 0, zeroCount: NULL, equations: NULL })).toThrowError(ERRORS.NO_MULTS);
+  let TERM_ONE: MultiTerm;
+  let TERM_TWO: MultiTerm;
+  let TERM_THREE: MultiTerm;
+  let TERM_FOUR: MultiTerm;
+
+  beforeEach(() => {
+    VAR_ONE   = createVar(1);
+    VAR_TWO   = createVar(2);
+    VAR_THREE = createVar(3);
+    VAR_FOUR  = createVar(4);
+    VAR_FIVE  = createVar(5);
+    VAR_SIX   = createVar(6);
+
+    TERM_ONE = {
+      fsymb: 'f',
+      args: makeList([
+        {
+          S: EMPTY_QUEUE,
+          M: { fsymb: 'x', args: NULL },
+        },
+        {
+          S: EMPTY_QUEUE,
+          M: { fsymb: 'y', args: NULL },
+        },
+      ]),
+    };
+
+    TERM_TWO = {
+      fsymb: 'g',
+      args: makeList([
+        {
+          S: makeQueue([VAR_THREE]),
+          M: null,
+        }
+      ]),
+    };
+
+    TERM_THREE = {
+      fsymb: 'f',
+      args: makeList([
+        {
+          S: makeQueue([VAR_FOUR]),
+          M: null,
+        },
+        {
+          S: EMPTY_QUEUE,
+          M: { fsymb: 'x', args: NULL },
+        },
+      ]),
+    };
+
+    TERM_FOUR = {
+      fsymb: 'y',
+      args: NULL,
+    };
   });
 
-  it('returns the correct multiequation', () => {
-    expect(selectMultiEquation(createU()))
-  });
+  describe('selectMultiEquation', () => {
+    it('fails if there are no multiequations with no references', () => {
+      expect(() => selectMultiEquation({ meqNum: 0, zeroCount: NULL, equations: NULL })).toThrowError(ERRORS.NO_MULTS);
+    });
 
-  it('reduces the multiequation count', () => {
-  });
+    it.only('returns the correct multiequation', () => {
+      expect(selectMultiEquation(
+        createU(
+          [createMeq([VAR_ONE], TERM_ONE, 0), createMeq([VAR_TWO], TERM_TWO, 0)],
+          [createMeq([VAR_THREE], TERM_THREE, 1)],
+        )))
+        .toEqual(createMeq([VAR_TWO], TERM_TWO, 0));
+    });
 
-  it('does not contain the returned multiequation any longer', () => {
+    it('reduces the multiequation count', () => {
+    });
+
+    it('does not contain the returned multiequation any longer', () => {
+    });
   });
 });
