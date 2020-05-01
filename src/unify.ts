@@ -101,9 +101,9 @@ export function mergeMultiTerms(M1: MultiTerm, M2: MultiTerm): MultiTerm {
 export function mergeMeq(M1: Pointer<MultiEquation>, M2: Pointer<MultiEquation>, U: U): void {
   if (M1 !== M2) {
     if (M1.val.varnum < M2.val.varnum) {
-      const swap = M1;
-      M1 = M2;
-      M2 = swap;
+      const swap: MultiEquation = M1.val;
+      M1.val = M2.val;
+      M2.val = swap;
     }
 
     M1.val.counter += M2.val.counter;
