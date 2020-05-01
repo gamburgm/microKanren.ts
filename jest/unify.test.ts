@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { selectMultiEquation, ERRORS, enqueue, dequeue, reduce, createQueue, mergeMultiTerms, mergeMeq } from '../src/unify';
+import { selectMultiEquation, ERRORS, enqueue, dequeue, reduce, createQueue, mergeMultiTerms, mergeMeq, compact } from '../src/unify';
 import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Cons, Pointer, TempMeq } from '../src/types';
 
 function makeList<T>(arr: Array<T>): List<T> {
@@ -174,6 +174,8 @@ describe('unification', () => {
   let VAR_THREE: MultiVar;
   let VAR_FOUR: MultiVar;
   let VAR_FIVE: MultiVar;
+  let VAR_SEVEN: MultiVar;
+  let VAR_EIGHT: MultiVar;
 
   let TERM_ONE: MultiTerm;
   let TERM_TWO: MultiTerm;
@@ -190,8 +192,10 @@ describe('unification', () => {
   let MEQ_TWO: Pointer<MultiEquation>;
   let MEQ_THREE: Pointer<MultiEquation>;
   let MEQ_FOUR: Pointer<MultiEquation>;
-  let MEQ_FIVE: Pointer<MultiEquation>;
-  let MEQ_SIX: Pointer<MultiEquation>;
+
+  let TEMP_LIST_ONE: List<TempMeq>;
+  let TEMP_LIST_TWO: List<TempMeq>;
+  let TEMP_LIST_THREE: List<TempMeq>;
 
   beforeEach(() => {
     VAR_ONE   = createVar(1);
@@ -199,6 +203,8 @@ describe('unification', () => {
     VAR_THREE = createVar(3);
     VAR_FOUR  = createVar(4);
     VAR_FIVE  = createVar(5);
+    VAR_SEVEN = createVar(7);
+    VAR_EIGHT = createVar(8);
 
     PTR = { val: NULL };
 
@@ -296,8 +302,35 @@ describe('unification', () => {
     MEQ_ONE = createMeq([], null, 0);
     MEQ_TWO = createMeq([], null, 0);
 
-    MEQ_THREE = createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1);
-    MEQ_FOUR = createMeq([VAR_FIVE], TERM_SIX, 2);
+    MEQ_THREE = createMeq([VAR_SEVEN, VAR_EIGHT], TERM_EIGHT, 3);
+    MEQ_FOUR  = createMeq([VAR_FIVE], TERM_SIX, 2);
+
+    TEMP_LIST_ONE = {
+      empty: false,
+      value: {
+        S: createQueue(VAR_EIGHT),
+        M: TERM_SIX,
+      },
+      rest: NULL,
+    };
+
+    TEMP_LIST_TWO = {
+      empty: false,
+      value: {
+        S: createQueue(VAR_FIVE),
+        M: TERM_SIX,
+      },
+      rest: TEMP_LIST_ONE,
+    };
+
+    TEMP_LIST_THREE = {
+      empty: false,
+      value: {
+        S: createQueue(VAR_FIVE),
+        M: TERM_SIX,
+      },
+      rest: NULL,
+    };
   });
 
   describe('selectMultiEquation', () => {
@@ -424,22 +457,22 @@ describe('unification', () => {
 
     it('merges a multiequation with contents with one without contents', () => {
       mergeMeq(MEQ_THREE, MEQ_ONE, createU([], []));
-      expect(MEQ_THREE).toEqual(createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1));
+      expect(MEQ_THREE).toEqual(createMeq([VAR_SEVEN, VAR_EIGHT], TERM_EIGHT, 3));
     });
 
     it('produces the same result when flipped', () => {
       mergeMeq(MEQ_ONE, MEQ_THREE, createU([], []));
-      expect(MEQ_ONE).toEqual(createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1))
+      expect(MEQ_ONE).toEqual(createMeq([VAR_SEVEN, VAR_EIGHT], TERM_EIGHT, 3))
     });
 
     it('works for larger multiequations', () => {
       mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []));
-      expect(MEQ_THREE).toEqual(createMeq([VAR_ONE, VAR_TWO, VAR_FIVE], mergeMultiTerms(TERM_EIGHT, TERM_SIX), 3))
+      expect(MEQ_THREE).toEqual(createMeq([VAR_SEVEN, VAR_EIGHT, VAR_FIVE], mergeMultiTerms(TERM_EIGHT, TERM_SIX), 5))
     });
 
     it('modifies the counter on the multiequation', () => {
       mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []));
-      expect(MEQ_THREE.val.counter).toEqual(3);
+      expect(MEQ_THREE.val.counter).toEqual(5);
     });
 
     it('modifies the varnum on the multiequation', () => {
@@ -466,5 +499,47 @@ describe('unification', () => {
   });
 
   describe('compact', () => {
+    it('does not do anything if no frontier', () => {
+      const U = createU([], []);
+      const expected: U = _.cloneDeep(U);
+      compact(NULL, U);
+      expect(U).toEqual(expected);
+    });
+
+    it('reduces the counter on the variable\'s multiequation', () => {
+      const U = createU([], [MEQ_THREE]);      
+      compact(TEMP_LIST_ONE, U);
+      expect((U.equations as Cons<Pointer<MultiEquation>>).value.val.counter).toEqual(2);
+    });
+
+    it('reduces the count on the other variable\'s multiequation', () => {
+      const U = createU([], [MEQ_THREE]);
+      compact(TEMP_LIST_TWO, U);
+      let vars: List<MultiVar> = MEQ_THREE.val.S;
+
+      expect(vars.empty).toBeFalsy();
+      while (vars.empty === false) {
+        if ((vars.value.M.val.S as Cons<MultiVar>).value.name === 5) {
+          expect(vars.value.M.val.counter).toEqual(1);
+          break;
+        }
+        vars = vars.rest;
+      }
+    });
+
+    it('merges two multiequations together', () => {
+      const threeCopy: Pointer<MultiEquation> = _.cloneDeep(MEQ_THREE);
+      const fourCopy: Pointer<MultiEquation> = _.cloneDeep(MEQ_FOUR);
+      const U = createU([], [MEQ_THREE]);
+      compact(TEMP_LIST_THREE, U);
+      mergeMeq(fourCopy, threeCopy, U);
+      expect(MEQ_THREE).toEqual(fourCopy);
+    });
+
+    it('merges multiterms together', () => {
+    });
+
+    it('appends the value to the zeroCount list if the count is zero', () => {
+    });
   });
 });
