@@ -75,8 +75,8 @@ export interface System {
 
 export interface U {
   meqNum: number;
-  zeroCount: List<MultiEquation>;
-  equations: List<MultiEquation>;
+  zeroCount: List<Pointer<MultiEquation>>;
+  equations: List<Pointer<MultiEquation>>;
 }
 
 export interface MultiTerm {
@@ -98,7 +98,7 @@ export interface TempMeq {
 
 export interface MultiVar {
   name: number;
-  M: MultiEquation;
+  M: Pointer<MultiEquation>;
 }
 
 export interface Cons<T> {

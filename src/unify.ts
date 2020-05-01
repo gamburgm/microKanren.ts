@@ -54,17 +54,16 @@ export function createQueue(v: MultiVar): Queue<MultiVar> {
   return q;
 }
 
-export function selectMultiEquation(U: U): MultiEquation {
+export function selectMultiEquation(U: U): Pointer<MultiEquation> {
   if (U.zeroCount.empty === true) throw ERRORS.NO_MULTS;
 
-  const nextMult: MultiEquation = U.zeroCount.value;
+  const nextMult: Pointer<MultiEquation> = U.zeroCount.value;
   U.zeroCount = U.zeroCount.rest;
   U.meqNum -= 1;
 
   return nextMult;
 }
 
-// TODO testing...
 export function reduce(M: MultiTerm, ptr: Pointer<List<TempMeq>>): void {
   let currArg: List<TempMeq> = M.args;
 
@@ -99,28 +98,49 @@ export function mergeMultiTerms(M1: MultiTerm, M2: MultiTerm): MultiTerm {
   return M2 ? M2 : M1;
 }
 
-export function mergeMeq(M1: MultiEquation, M2: MultiEquation, U: U): MultiEquation {
+export function mergeMeq(M1: Pointer<MultiEquation>, M2: Pointer<MultiEquation>, U: U): void {
   if (M1 !== M2) {
-    // TODO I don't know if this works
-    if (M1.varnum < M2.varnum) {
+    if (M1.val.varnum < M2.val.varnum) {
       const swap = M1;
       M1 = M2;
       M2 = swap;
     }
 
-    M1.counter += M2.counter;
-    M1.varnum += M2.varnum;
-    let otherVars: List<MultiVar> = M2.S;
+    M1.val.counter += M2.val.counter;
+    M1.val.varnum += M2.val.varnum;
+    let otherVars: List<MultiVar> = M2.val.S;
 
     while (otherVars.empty === false) {
-      const V = otherVars.value;
+      const V: MultiVar = otherVars.value;
       otherVars = otherVars.rest;
       V.M = M1;
-      M1.S = { empty: false, value: V, rest: M1.S };
+      M1.val.S = { empty: false, value: V, rest: M1.val.S };
     }
 
     U.meqNum -= 1;
-    M1.M = mergeMultiTerms(M1.M, M2.M);
-    return M1;
+    M1.val.M = mergeMultiTerms(M1.val.M, M2.val.M);
+  }
+}
+
+export function compact(frontier: List<TempMeq>, U: U): void {
+  while (frontier.empty === false) {
+    const variables: Queue<MultiVar> = frontier.value.S;
+    const V: MultiVar = dequeue(variables); 
+    const mult: Pointer<MultiEquation> = V.M;
+    mult.val.counter -= 1;
+
+    while (variables.push !== null) {
+      const otherV: MultiVar = dequeue(variables);
+      const otherMult: Pointer<MultiEquation> = otherV.M;
+      otherMult.val.counter -= 1;
+      mergeMeq(mult, otherMult, U);
+    }
+
+    mult.val.M = mergeMultiTerms(mult.val.M, frontier.value.M);
+    if (mult.val.counter === 0) {
+      U.zeroCount = { empty: false, value: mult, rest: U.zeroCount };
+    }
+
+    frontier = frontier.rest;
   }
 }
