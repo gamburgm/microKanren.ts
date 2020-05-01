@@ -96,7 +96,7 @@ export function mergeMultiTerms(M1: MultiTerm, M2: MultiTerm): MultiTerm {
     }
   }
 
-  return M2;
+  return M2 ? M2 : M1;
 }
 
 export function mergeMeq(M1: MultiEquation, M2: MultiEquation, U: U): MultiEquation {

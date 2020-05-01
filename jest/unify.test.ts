@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { selectMultiEquation, ERRORS, enqueue, dequeue, reduce, createQueue, mergeMultiTerms, mergeMeq } from '../src/unify';
 import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Cons, Pointer, TempMeq } from '../src/types';
 
@@ -171,6 +172,7 @@ describe('unification', () => {
   let VAR_TWO: MultiVar;
   let VAR_THREE: MultiVar;
   let VAR_FOUR: MultiVar;
+  let VAR_FIVE: MultiVar;
 
   let TERM_ONE: MultiTerm;
   let TERM_TWO: MultiTerm;
@@ -183,11 +185,19 @@ describe('unification', () => {
 
   let PTR: Pointer<List<TempMeq>>;
 
+  let MEQ_ONE: MultiEquation;
+  let MEQ_TWO: MultiEquation;
+  let MEQ_THREE: MultiEquation;
+  let MEQ_FOUR: MultiEquation;
+  let MEQ_FIVE: MultiEquation;
+  let MEQ_SIX: MultiEquation;
+
   beforeEach(() => {
     VAR_ONE   = createVar(1);
     VAR_TWO   = createVar(2);
     VAR_THREE = createVar(3);
     VAR_FOUR  = createVar(4);
+    VAR_FIVE  = createVar(5);
 
     PTR = { val: NULL };
 
@@ -281,6 +291,12 @@ describe('unification', () => {
         },
       ]),
     };
+
+    MEQ_ONE = createMeq([], null, 0);
+    MEQ_TWO = createMeq([], null, 0);
+
+    MEQ_THREE = createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1);
+    MEQ_FOUR = createMeq([VAR_FIVE], TERM_SIX, 2);
   });
 
   describe('selectMultiEquation', () => {
@@ -392,11 +408,48 @@ describe('unification', () => {
         ]),
       });
     });
+
+    it('returns the correct value if the second value is null', () => {
+      expect(mergeMultiTerms(TERM_SIX, null)).toEqual(TERM_SIX);
+    });
   });
 
   describe('mergeMeq', () => {
     it('does nothing on empty multiequations', () => {
+      expect(mergeMeq(MEQ_ONE, MEQ_TWO, createU([], []))).toEqual(MEQ_ONE);
+    });
 
+    it('merges a multiequation with contents with one without contents', () => {
+      expect(mergeMeq(MEQ_THREE, MEQ_ONE, createU([], []))).toEqual(createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1));
+    });
+
+    it('produces the same result when flipped', () => {
+      expect(mergeMeq(MEQ_ONE, MEQ_THREE, createU([], []))).toEqual(createMeq([VAR_ONE, VAR_TWO], TERM_EIGHT, 1))
+    });
+
+    it('works for larger multiequations', () => {
+      expect(mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []))).toEqual(createMeq([VAR_ONE, VAR_TWO, VAR_FIVE], mergeMultiTerms(TERM_EIGHT, TERM_SIX), 3))
+    });
+
+    it('modifies the counter on the multiequation', () => {
+      const res: MultiEquation = mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []));
+      expect(res.counter).toEqual(3);
+    });
+
+    it('modifies the varnum on the multiequation', () => {
+      const res: MultiEquation = mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []));
+      expect(res.varnum).toEqual(3);
+    });
+
+    it('corrects the MEQ pointers for other vars', () => {
+      const res: MultiEquation = mergeMeq(MEQ_THREE, MEQ_FOUR, createU([], []));
+      expect(VAR_FIVE.M).toEqual(res);
+    });
+
+    it('reduces the multiequation number count', () => {
+      const U: U = createU([MEQ_ONE], [MEQ_THREE, MEQ_FOUR]);
+      mergeMeq(MEQ_THREE, MEQ_FOUR, U);
+      expect(U.meqNum).toEqual(2); 
     });
   });
 });
