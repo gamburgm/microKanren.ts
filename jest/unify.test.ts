@@ -1,6 +1,7 @@
 import _ from 'lodash';
-import { selectMultiEquation, ERRORS, enqueue, dequeue, reduce, createQueue, mergeMultiTerms, mergeMeq, compact } from '../src/unify';
-import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Cons, Pointer, TempMeq } from '../src/types';
+import util from 'util';
+import { selectMultiEquation, ERRORS, enqueue, dequeue, reduce, createQueue, mergeMultiTerms, mergeMeq, compact, unify } from '../src/unify';
+import { Null, MultiEquation, List, U, MultiVar, MultiTerm, Queue, Cons, Pointer, TempMeq, System } from '../src/types';
 
 function makeList<T>(arr: Array<T>): List<T> {
   return arr.reduce((rest: List<T>, elem: T) => {
@@ -550,6 +551,176 @@ describe('unification', () => {
       const U = createU([], [MEQ_THREE]);
       compact(TEMP_LIST_ONE, U);
       expect(U.zeroCount.empty).toBeFalsy();
+    });
+  });
+
+  describe('unify', () => {
+    let UNIFY_ZERO:  Pointer<MultiEquation>;
+    let UNIFY_ONE:   Pointer<MultiEquation>;
+    let UNIFY_TWO:   Pointer<MultiEquation>;
+    let UNIFY_THREE: Pointer<MultiEquation>;
+    let UNIFY_FOUR:  Pointer<MultiEquation>;
+    let UNIFY_FIVE:  Pointer<MultiEquation>;
+
+    beforeEach(() => {
+      UNIFY_ONE   = createMeq([VAR_ONE], null, 2);
+      UNIFY_TWO   = createMeq([VAR_TWO], null, 3);
+      UNIFY_THREE = createMeq([VAR_THREE], null, 1);
+      UNIFY_FOUR  = createMeq([VAR_FOUR], null, 2);
+      UNIFY_FIVE  = createMeq([VAR_FIVE], null, 1);
+
+      UNIFY_ZERO = createMeq([VAR_EIGHT],
+      {
+        fsymb: 'f',
+        args: makeList([
+          {
+            S: createQueue(VAR_ONE),
+            M: {
+              fsymb: 'g',
+              args: makeList([
+                {
+                  S: EMPTY_QUEUE,
+                  M: {
+                    fsymb: 'h',
+                    args: makeList([
+                      {
+                        S: EMPTY_QUEUE,
+                        M: {
+                          fsymb: 'a',
+                          args: NULL,
+                        },
+                      },
+                      {
+                        S: createQueue(VAR_FIVE),
+                        M: null,
+                      },
+                    ]),
+                  },
+                },
+                {
+                  S: createQueue(VAR_TWO),
+                  M: null,
+                },
+              ]),
+            },
+          },
+          {
+            S: createQueue(VAR_ONE),
+            M: {
+              fsymb: 'g',
+              args: makeList([
+                {
+                  S: createQueue(VAR_TWO),
+                  M: null,
+                },
+                {
+                  S: createQueue(VAR_THREE),
+                  M: null,
+                },
+              ]),
+            },
+          },
+          {
+            S: createQueue(VAR_TWO),
+            M: {
+              fsymb: 'h',
+              args: makeList([
+                {
+                  S: EMPTY_QUEUE,
+                  M: {
+                    fsymb: 'a',
+                    args: NULL,
+                  },
+                },
+                {
+                  S: createQueue(VAR_FOUR),
+                  M: null,
+                },
+              ]),
+            },
+          },
+          {
+            S: createQueue(VAR_FOUR),
+            M: {
+              fsymb: 'b',
+              args: NULL,
+            },
+          },
+        ]),
+      }, 0)
+    });
+
+    it('works when one variable equals one term', () => {
+      const R: System = {
+        T: NULL,
+        U: createU([createMeq([VAR_ONE], TERM_FOUR, 0)], [])
+      };
+
+      expect(unify(R)).toEqual(makeList([createMeq([VAR_ONE], TERM_FOUR, 0).val]));
+    });
+
+    it.only('works on a more complicated example', () => {
+      const R: System = {
+        T: NULL,
+        U: createU([UNIFY_ZERO], [UNIFY_ONE, UNIFY_TWO, UNIFY_THREE, UNIFY_FOUR, UNIFY_FIVE]),
+      };
+
+      const res: List<MultiEquation> = unify(R);
+      console.log(util.inspect((((((res as Cons<MultiEquation>).rest as Cons<MultiEquation>).rest as Cons<MultiEquation>).rest as Cons<MultiEquation>).value.M.args as Cons<TempMeq>).value.S.pop.data.name, false, null, true));
+
+      expect(res).toEqual(makeList([
+        createMeq([VAR_FOUR, VAR_FIVE], {
+          fsymb: 'b',
+          args: NULL,
+        }, 0).val,
+        createMeq([VAR_TWO, VAR_THREE], {
+          fsymb: 'h',
+          args: makeList([
+            {
+              S: EMPTY_QUEUE,
+              M: { fsymb: 'a', args: NULL },
+            },
+            {
+              S: createQueue(VAR_FOUR),
+              M: null,
+            },
+          ]),
+        }, 0).val,
+        createMeq([VAR_ONE], {
+          fsymb: 'g',
+          args: makeList([
+            {
+              S: createQueue(VAR_TWO),
+              M: null,
+            },
+            {
+              S: createQueue(VAR_THREE),
+              M: null,
+            },
+          ]),
+        }, 0).val,
+        createMeq([VAR_EIGHT], {
+          fsymb: 'f',
+          args: makeList([
+            {
+              S: createQueue(VAR_ONE),
+              M: null,
+            },
+            {
+              S: createQueue(VAR_TWO),
+              M: null,
+            },
+            {
+              S: createQueue(VAR_THREE),
+              M: null,
+            },
+            {
+              S: createQueue(VAR_FOUR),
+              M: null,
+            },
+          ]),
+        }, 0).val,
+      ]));
     });
   });
 });

@@ -1,4 +1,4 @@
-import { U, MultiEquation, MultiTerm, List, TempMeq, Pointer, MultiVar, Queue, Node, Cons } from './types';
+import { U, MultiEquation, MultiTerm, List, TempMeq, Pointer, MultiVar, Queue, Node, Cons, System } from './types';
 
 export const ERRORS: Record<string, string> = {
   NO_MULTS: 'Error: No Multiequations to return!',
@@ -143,4 +143,18 @@ export function compact(frontier: List<TempMeq>, U: U): void {
 
     frontier = frontier.rest;
   }
+}
+
+export function unify(R: System): List<MultiEquation> {
+  while (R.U.meqNum !== 0) {
+    const meq: Pointer<MultiEquation> = selectMultiEquation(R.U);
+    if (meq.val.M !== null) {
+      const frontierPtr: Pointer<List<TempMeq>> = { val: { empty: true } };
+      reduce(meq.val.M, frontierPtr);
+      compact(frontierPtr.val, R.U);
+    }
+    R.T = { empty: false, value: meq.val, rest: R.T };
+  }
+
+  return R.T;
 }
