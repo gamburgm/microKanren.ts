@@ -659,21 +659,57 @@ describe('unification', () => {
       expect(unify(R)).toEqual(makeList([createMeq([VAR_ONE], TERM_FOUR, 0).val]));
     });
 
-    it.only('works on a more complicated example', () => {
+    it('works on a more complicated example', () => {
+      const CLONE_ONE = _.cloneDeep(VAR_ONE);
+      const CLONE_TWO = _.cloneDeep(VAR_TWO);
+      const CLONE_THREE = _.cloneDeep(VAR_THREE);
+      const CLONE_FOUR = _.cloneDeep(VAR_FOUR);
+      const CLONE_FIVE = _.cloneDeep(VAR_FIVE);
+      const CLONE_EIGHT = _.cloneDeep(VAR_EIGHT);
+
       const R: System = {
         T: NULL,
         U: createU([UNIFY_ZERO], [UNIFY_ONE, UNIFY_TWO, UNIFY_THREE, UNIFY_FOUR, UNIFY_FIVE]),
       };
 
       const res: List<MultiEquation> = unify(R);
-      console.log(util.inspect((((((res as Cons<MultiEquation>).rest as Cons<MultiEquation>).rest as Cons<MultiEquation>).rest as Cons<MultiEquation>).value.M.args as Cons<TempMeq>).value.S.pop.data.name, false, null, true));
 
       expect(res).toEqual(makeList([
-        createMeq([VAR_FOUR, VAR_FIVE], {
-          fsymb: 'b',
-          args: NULL,
+        createMeq([CLONE_EIGHT], {
+          fsymb: 'f',
+          args: makeList([
+            {
+              S: createQueue(CLONE_ONE),
+              M: null,
+            },
+            {
+              S: createQueue(CLONE_ONE),
+              M: null,
+            },
+            {
+              S: createQueue(CLONE_TWO),
+              M: null,
+            },
+            {
+              S: createQueue(CLONE_FOUR),
+              M: null,
+            },
+          ]),
         }, 0).val,
-        createMeq([VAR_TWO, VAR_THREE], {
+        createMeq([CLONE_ONE], {
+          fsymb: 'g',
+          args: makeList([
+            {
+              S: createQueue(CLONE_TWO),
+              M: null,
+            },
+            {
+              S: createQueue(CLONE_THREE),
+              M: null,
+            },
+          ]),
+        }, 0).val,
+        createMeq([CLONE_THREE, CLONE_TWO], {
           fsymb: 'h',
           args: makeList([
             {
@@ -681,44 +717,14 @@ describe('unification', () => {
               M: { fsymb: 'a', args: NULL },
             },
             {
-              S: createQueue(VAR_FOUR),
+              S: createQueue(CLONE_FIVE),
               M: null,
             },
           ]),
         }, 0).val,
-        createMeq([VAR_ONE], {
-          fsymb: 'g',
-          args: makeList([
-            {
-              S: createQueue(VAR_TWO),
-              M: null,
-            },
-            {
-              S: createQueue(VAR_THREE),
-              M: null,
-            },
-          ]),
-        }, 0).val,
-        createMeq([VAR_EIGHT], {
-          fsymb: 'f',
-          args: makeList([
-            {
-              S: createQueue(VAR_ONE),
-              M: null,
-            },
-            {
-              S: createQueue(VAR_TWO),
-              M: null,
-            },
-            {
-              S: createQueue(VAR_THREE),
-              M: null,
-            },
-            {
-              S: createQueue(VAR_FOUR),
-              M: null,
-            },
-          ]),
+        createMeq([CLONE_FIVE, CLONE_FOUR], {
+          fsymb: 'b',
+          args: NULL,
         }, 0).val,
       ]));
     });

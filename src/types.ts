@@ -101,6 +101,7 @@ export interface MultiVar {
   M: Pointer<MultiEquation>;
 }
 
+// TODO maybe type
 export interface Cons<T> {
   empty: false;
   value: T;
